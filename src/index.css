@@ -1,0 +1,233 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0d1117;
+  color: #c9d1d9;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header {
+  background-color: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 16px 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #f0f6fc;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-link {
+  color: #c9d1d9;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: #21262d;
+  color: #f0f6fc;
+}
+
+.main-content {
+  padding: 40px 0;
+}
+
+.profile-section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #30363d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #7d8590;
+  margin-bottom: 20px;
+}
+
+.profile-name {
+  font-size: 28px;
+  font-weight: bold;
+  color: #f0f6fc;
+  margin: 0 0 8px 0;
+}
+
+.profile-bio {
+  color: #8b949e;
+  margin: 0 0 16px 0;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #f0f6fc;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #8b949e;
+}
+
+.contribution-section {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 24px;
+  margin-bottom: 40px;
+}
+
+.contribution-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin: 0 0 16px 0;
+}
+
+.contribution-subtitle {
+  font-size: 14px;
+  color: #8b949e;
+  margin: 0 0 24px 0;
+}
+
+.contribution-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 16px;
+}
+
+.contribution-week {
+  display: flex;
+  gap: 3px;
+}
+
+.contribution-day {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.contribution-day:hover {
+  border-color: #7d8590;
+}
+
+.contribution-day.level-0 {
+  background-color: #161b22;
+}
+
+.contribution-day.level-1 {
+  background-color: #0e4429;
+}
+
+.contribution-day.level-2 {
+  background-color: #006d32;
+}
+
+.contribution-day.level-3 {
+  background-color: #26a641;
+}
+
+.contribution-day.level-4 {
+  background-color: #39d353;
+}
+
+.contribution-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-square {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #30363d;
+}
+
+.current-streak {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+
+.streak-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: #39d353;
+  margin: 0 0 8px 0;
+}
+
+.streak-label {
+  font-size: 14px;
+  color: #8b949e;
+  margin: 0;
+} 
