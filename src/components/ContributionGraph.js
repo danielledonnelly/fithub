@@ -6,6 +6,7 @@ const ContributionGraph = ({ data, onDayClick }) => {
     const today = new Date();
     const oneYearAgo = new Date(today);
     oneYearAgo.setFullYear(today.getFullYear() - 1);
+    oneYearAgo.setDate(today.getDate() + 1);
     
     // Start from the beginning of the week containing the date one year ago
     const startDate = new Date(oneYearAgo);
@@ -62,23 +63,52 @@ const ContributionGraph = ({ data, onDayClick }) => {
 
   const weeks = generateYearData();
 
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
     <div className="contribution-graph">
-      {weeks.map((week, weekIndex) => (
-        <div key={weekIndex} className="contribution-week">
-          {week.map((day, dayIndex) => (
-            <div
-              key={`${weekIndex}-${dayIndex}`}
-              className={`contribution-day level-${day.level}`}
-              title={getTooltipText(day.date, day.level)}
-              onClick={() => onDayClick(day.date, day.level)}
-              style={{
-                opacity: day.isCurrentMonth ? 1 : 0.3
-              }}
-            />
+      <div className="contribution-months">
+        {/* Month labels */}
+        <div className="month-labels">
+          {Array.from({ length: 12 }, (_, i) => {
+            const date = new Date();
+            date.setMonth(date.getMonth() - 11 + i);
+            return (
+              <div key={i} className="month-label">
+                {date.toLocaleDateString('en-US', { month: 'short' })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      <div className="contribution-main">
+        <div className="contribution-days">
+          {dayLabels.map((day, index) => (
+            <div key={index} className="day-label">
+              {index % 2 === 1 ? day : ''}
+            </div>
           ))}
         </div>
-      ))}
+        
+        <div className="contribution-weeks">
+          {weeks.map((week, weekIndex) => (
+            <div key={weekIndex} className="contribution-week">
+              {week.map((day, dayIndex) => (
+                <div
+                  key={`${weekIndex}-${dayIndex}`}
+                  className={`contribution-day level-${day.level}`}
+                  title={getTooltipText(day.date, day.level)}
+                  onClick={() => onDayClick(day.date, day.level)}
+                  style={{
+                    opacity: day.isCurrentMonth ? 1 : 0.3
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

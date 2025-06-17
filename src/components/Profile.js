@@ -4,11 +4,10 @@ const Profile = ({ totalWorkouts, currentStreak }) => {
   return (
     <div className="profile-section">
       <div className="profile-info">
-        <div className="profile-avatar">🏃</div>
-        <h1 className="profile-name">Fitness Enthusiast</h1>
-        <p className="profile-bio">
-          Committed to staying fit and healthy. Tracking my fitness journey one workout at a time! 
-          🏋️‍♀️ Strength training | 🏃‍♀️ Cardio | 🧘‍♀️ Yoga
+        <div className="profile-avatar">D</div>
+        <h1 className="profile-name">DANI</h1>
+        <p className="profile-bio"> 
+          LOCK IN LOCK IN LOCK IN aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAA
         </p>
         <div className="profile-stats">
           <div className="stat">

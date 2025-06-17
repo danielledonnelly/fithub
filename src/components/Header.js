@@ -1,17 +1,45 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
+  const location = useLocation();
+
   return (
     <header className="header">
       <div className="container">
         <div className="header-content">
-          <a href="/" className="logo">💪 FitHub</a>
+          <Link to="/" className="logo">FitHub</Link>
           <nav className="nav">
-            <a href="/" className="nav-link">Dashboard</a>
-            <a href="/workouts" className="nav-link">Workouts</a>
-            <a href="/progress" className="nav-link">Progress</a>
-            <a href="/community" className="nav-link">Community</a>
-            <a href="/profile" className="nav-link">Profile</a>
+            <Link 
+              to="/" 
+              className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link 
+              to="/workouts" 
+              className={`nav-link ${location.pathname === '/workouts' ? 'active' : ''}`}
+            >
+              Workouts
+            </Link>
+            <Link 
+              to="/progress" 
+              className={`nav-link ${location.pathname === '/progress' ? 'active' : ''}`}
+            >
+              Progress
+            </Link>
+            <Link 
+              to="/community" 
+              className={`nav-link ${location.pathname === '/community' ? 'active' : ''}`}
+            >
+              Community
+            </Link>
+            <Link 
+              to="/profile" 
+              className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
+            >
+              Profile
+            </Link>
           </nav>
         </div>
       </div>

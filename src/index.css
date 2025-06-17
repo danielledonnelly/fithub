@@ -62,6 +62,11 @@ code {
   color: #f0f6fc;
 }
 
+.nav-link.active {
+  background-color: #21262d;
+  color: #f0f6fc;
+}
+
 .main-content {
   padding: 40px 0;
 }
@@ -147,13 +152,64 @@ code {
 .contribution-graph {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
   margin-bottom: 16px;
+}
+
+.contribution-months {
+  display: flex;
+  align-items: center;
+}
+
+.month-labels {
+  display: flex;
+  width: calc(53 * 15px); /* 53 weeks * (12px square + 3px gap) */
+  justify-content: space-between;
+  padding-left: 35px; /* Account for day labels width */
+}
+
+.month-label {
+  font-size: 11px;
+  color: #7d8590;
+  text-align: center;
+  flex: 1;
+}
+
+.contribution-main {
+  display: flex;
+  gap: 10px;
+}
+
+.contribution-days {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 1px;
+  width: 25px;
+}
+
+.day-label {
+  height: 12px;
+  font-size: 10px;
+  color: #7d8590;
+  line-height: 12px;
+  text-align: right;
+  padding-right: 4px;
+  width: 25px;
+}
+
+.contribution-weeks {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  width: calc(53 * 15px); /* Exact width to match month labels */
 }
 
 .contribution-week {
   display: flex;
+  flex-direction: column;
   gap: 3px;
+  flex-shrink: 0;
 }
 
 .contribution-day {
@@ -175,19 +231,29 @@ code {
 }
 
 .contribution-day.level-1 {
-  background-color: #0e4429;
+  background-color: #4a0808;
 }
 
 .contribution-day.level-2 {
-  background-color: #006d32;
+  background-color: #7a1010;
 }
 
 .contribution-day.level-3 {
-  background-color: #26a641;
+  background-color: #b81818;
 }
 
 .contribution-day.level-4 {
-  background-color: #39d353;
+  background-color: #e52020;
+}
+
+.contribution-content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.contribution-graph-container {
+  flex: 1;
 }
 
 .contribution-legend {
@@ -196,6 +262,7 @@ code {
   gap: 8px;
   font-size: 12px;
   color: #8b949e;
+  margin-top: 16px;
 }
 
 .legend-item {
@@ -211,23 +278,54 @@ code {
   border: 1px solid #30363d;
 }
 
+.legend-square.level-0 {
+  background-color: #161b22;
+}
+
+.legend-square.level-1 {
+  background-color: #4a0808;
+}
+
+.legend-square.level-2 {
+  background-color: #7a1010;
+}
+
+.legend-square.level-3 {
+  background-color: #b81818;
+}
+
+.legend-square.level-4 {
+  background-color: #e52020;
+}
+
 .current-streak {
   background-color: #21262d;
   border: 1px solid #30363d;
-  border-radius: 6px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 24px;
   text-align: center;
+  min-width: 200px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .streak-number {
-  font-size: 32px;
+  font-size: 48px;
   font-weight: bold;
-  color: #39d353;
+  color: #e52020;
   margin: 0 0 8px 0;
+  line-height: 1;
 }
 
 .streak-label {
-  font-size: 14px;
+  font-size: 16px;
+  color: #c9d1d9;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.streak-description {
+  font-size: 12px;
   color: #8b949e;
   margin: 0;
+  font-style: italic;
 } 
