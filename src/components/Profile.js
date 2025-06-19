@@ -2,29 +2,29 @@ import React from 'react';
 
 const Profile = ({ totalWorkouts, currentStreak }) => {
   return (
-    <div className="profile-section">
-      <div className="profile-info">
-        <div className="profile-avatar">D</div>
-        <h1 className="profile-name">DANI</h1>
-        <p className="profile-bio"> 
+    <div className="flex gap-10 mb-10">
+      <div className="flex-1">
+        <div className="w-[120px] h-[120px] rounded-full bg-[#30363d] flex items-center justify-center text-5xl text-[#7d8590] mb-5">D</div>
+        <h1 className="text-3xl font-bold text-[#f0f6fc] mb-2">DANI</h1>
+        <p className="text-[#8b949e] mb-4"> 
           LOCK IN LOCK IN LOCK IN aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAA
         </p>
-        <div className="profile-stats">
-          <div className="stat">
-            <div className="stat-number">{totalWorkouts}</div>
-            <div className="stat-label">Total Workouts</div>
+        <div className="flex gap-6">
+          <div className="flex flex-col items-center">
+            <div className="text-2xl font-bold text-[#f0f6fc]">{totalWorkouts}</div>
+            <div className="text-sm text-[#8b949e]">Total Workouts</div>
           </div>
-          <div className="stat">
-            <div className="stat-number">{currentStreak}</div>
-            <div className="stat-label">Current Streak</div>
+          <div className="flex flex-col items-center">
+            <div className="text-2xl font-bold text-[#f0f6fc]">{currentStreak}</div>
+            <div className="text-sm text-[#8b949e]">Current Streak</div>
           </div>
-          <div className="stat">
-            <div className="stat-number">12</div>
-            <div className="stat-label">Months Active</div>
+          <div className="flex flex-col items-center">
+            <div className="text-2xl font-bold text-[#f0f6fc]">12</div>
+            <div className="text-sm text-[#8b949e]">Months Active</div>
           </div>
-          <div className="stat">
-            <div className="stat-number">85</div>
-            <div className="stat-label">Fitness Score</div>
+          <div className="flex flex-col items-center">
+            <div className="text-2xl font-bold text-[#f0f6fc]">85</div>
+            <div className="text-sm text-[#8b949e]">Fitness Score</div>
           </div>
         </div>
       </div>

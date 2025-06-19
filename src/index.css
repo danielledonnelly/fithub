@@ -90,25 +90,17 @@ code {
   color: #8b949e;
 }
 
+/* Contribution graph styles */
 .contribution-section {
-  background-color: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 6px;
-  padding: 24px;
-  margin-bottom: 40px;
+  @apply bg-[#161b22] border border-[#30363d] rounded-lg p-6 mb-10;
 }
 
 .contribution-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #f0f6fc;
-  margin: 0 0 16px 0;
+  @apply text-lg font-semibold text-[#f0f6fc] mb-4;
 }
 
 .contribution-subtitle {
-  font-size: 14px;
-  color: #8b949e;
-  margin: 0 0 24px 0;
+  @apply text-sm text-[#8b949e] mb-6;
 }
 
 .contribution-graph {
@@ -209,85 +201,57 @@ code {
 }
 
 .contribution-content {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
+  @apply flex gap-6 items-start;
 }
 
 .contribution-graph-container {
-  flex: 1;
+  @apply flex-1;
 }
 
 .contribution-legend {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #8b949e;
-  margin-top: 16px;
+  @apply flex items-center gap-2 text-xs text-[#8b949e] mt-4;
 }
 
 .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  @apply flex items-center gap-1;
 }
 
 .legend-square {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid #30363d;
+  @apply w-3 h-3 rounded-sm border border-[#30363d];
 }
 
 .legend-square.level-0 {
-  background-color: #161b22;
+  @apply bg-[#161b22];
 }
 
 .legend-square.level-1 {
-  background-color: #4a0808;
+  @apply bg-[#4a0808];
 }
 
 .legend-square.level-2 {
-  background-color: #7a1010;
+  @apply bg-[#7a1010];
 }
 
 .legend-square.level-3 {
-  background-color: #b81818;
+  @apply bg-[#b81818];
 }
 
 .legend-square.level-4 {
-  background-color: #e52020;
+  @apply bg-[#e52020];
 }
 
 .current-streak {
-  background-color: #21262d;
-  border: 1px solid #30363d;
-  border-radius: 8px;
-  padding: 24px;
-  text-align: center;
-  min-width: 200px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  @apply bg-[#21262d] border border-[#30363d] rounded-lg p-6 text-center min-w-[200px] shadow-sm;
 }
 
 .streak-number {
-  font-size: 48px;
-  font-weight: bold;
-  color: #e52020;
-  margin: 0 0 8px 0;
-  line-height: 1;
+  @apply text-5xl font-bold text-[#e52020] mb-2 leading-none;
 }
 
 .streak-label {
-  font-size: 16px;
-  color: #c9d1d9;
-  margin: 0 0 4px 0;
-  font-weight: 500;
+  @apply text-base text-[#c9d1d9] mb-1 font-medium;
 }
 
 .streak-description {
-  font-size: 12px;
-  color: #8b949e;
-  margin: 0;
-  font-style: italic;
+  @apply text-xs text-[#8b949e] m-0 italic;
 } 
