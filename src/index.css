@@ -4,19 +4,11 @@
 
 /* Custom styles */
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #0d1117;
-  color: #c9d1d9;
+  @apply m-0 font-sans antialiased bg-[#0d1117] text-[#c9d1d9];
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  @apply font-mono;
 }
 
 * {
@@ -24,75 +16,53 @@ code {
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+  @apply max-w-7xl mx-auto px-5;
 }
 
 .main-content {
-  padding: 40px 0;
+  @apply py-4;
 }
 
+/* Profile styles */
 .profile-section {
-  display: flex;
-  gap: 40px;
-  margin-bottom: 40px;
+  @apply flex justify-between gap-10 mb-10;
 }
 
 .profile-info {
-  flex: 1;
+  @apply flex-1 max-w-[60%];
 }
 
 .profile-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background-color: #30363d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  color: #7d8590;
-  margin-bottom: 20px;
+  @apply w-[w-30] h-[w-30] rounded-full bg-[#30363d] flex items-center justify-center text-5xl text-[#7d8590] mb-5;
 }
 
 .profile-name {
-  font-size: 28px;
-  font-weight: bold;
-  color: #f0f6fc;
-  margin: 0 0 8px 0;
+  @apply text-3xl font-bold text-[#f0f6fc] m-0 mb-2;
 }
 
 .profile-bio {
-  color: #8b949e;
-  margin: 0 0 16px 0;
+  @apply text-[#8b949e] m-0;
 }
 
 .profile-stats {
-  display: flex;
-  gap: 24px;
+  @apply flex gap-6;
 }
 
 .stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  @apply flex flex-col items-center;
 }
 
 .stat-number {
-  font-size: 24px;
-  font-weight: bold;
-  color: #f0f6fc;
+  @apply text-2xl font-bold text-[#f0f6fc];
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #8b949e;
+  @apply text-sm text-[#8b949e];
 }
 
 /* Contribution graph styles */
 .contribution-section {
-  @apply bg-[#161b22] border border-[#30363d] rounded-lg p-6 mb-10;
+  @apply bg-[#161b22] border border-[#30363d] rounded-lg px-6 pt-2 pb-6 mb-10;
 }
 
 .contribution-title {
@@ -193,7 +163,7 @@ code {
 }
 
 .contribution-day.level-3 {
-  background-color: #b81818;
+  @apply bg-[#b81818];
 }
 
 .contribution-day.level-4 {
