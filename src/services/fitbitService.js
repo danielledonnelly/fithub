@@ -1,11 +1,7 @@
 import axios from 'axios';
 
 const FITBIT_AUTH_URL = 'https://www.fitbit.com/oauth2/authorize';
-const FITBIT_TOKEN_URL = 'https://api.fitbit.com/oauth2/token';
-const FITBIT_API_BASE_URL = 'https://api.fitbit.com/1/user/-';
-
-// Helper function to encode in base64 (browser-safe)
-const btoa = (str) => window.btoa(unescape(encodeURIComponent(str)));
+const API_BASE_URL = '/api'; // Our backend proxy
 
 class FitbitService {
     constructor() {
@@ -40,85 +36,53 @@ class FitbitService {
     }
 
     async getAccessToken(code) {
-        console.log('Getting access token with code:', code);
-        
-        const params = new URLSearchParams();
-        params.append('client_id', this.clientId);
-        params.append('grant_type', 'authorization_code');
-        params.append('redirect_uri', this.redirectUri);
-        params.append('code', code);
-
-        const auth = btoa(`${this.clientId}:${this.clientSecret}`);
-
         try {
-            console.log('Token request:', {
-                url: FITBIT_TOKEN_URL,
-                params: params.toString(),
-                clientId: this.clientId,
-                redirectUri: this.redirectUri
-            });
-
-            const response = await axios.post(FITBIT_TOKEN_URL, params, {
-                headers: {
-                    'Authorization': `Basic ${auth}`,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-
-            console.log('Token response:', {
-                status: response.status,
-                data: response.data
-            });
-
+            const response = await axios.post(`${API_BASE_URL}/fitbit/token`, { code });
             return response.data;
         } catch (error) {
-            console.error('Token request failed:', {
-                status: error.response?.status,
-                data: error.response?.data,
-                error: error.message
-            });
+            console.error('Error getting access token:', error);
             throw error;
         }
     }
 
     async getActivityData(date, accessToken) {
         try {
-            const response = await axios.get(`${FITBIT_API_BASE_URL}/activities/date/${date}.json`, {
+            const response = await axios.get(`${API_BASE_URL}/fitbit/activities/${date}`, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
+                    'Authorization': `Bearer ${accessToken}`
+                }
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching activity data:', error.response?.data || error);
+            console.error('Error fetching activity data:', error);
             throw error;
         }
     }
 
     async getHeartRateData(date, accessToken) {
         try {
-            const response = await axios.get(`${FITBIT_API_BASE_URL}/activities/heart/date/${date}/1d.json`, {
+            const response = await axios.get(`${API_BASE_URL}/fitbit/heartrate/${date}`, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
+                    'Authorization': `Bearer ${accessToken}`
+                }
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching heart rate data:', error.response?.data || error);
+            console.error('Error fetching heart rate data:', error);
             throw error;
         }
     }
 
     async getProfile(accessToken) {
         try {
-            const response = await axios.get(`${FITBIT_API_BASE_URL}/profile.json`, {
+            const response = await axios.get(`${API_BASE_URL}/fitbit/profile`, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
+                    'Authorization': `Bearer ${accessToken}`
+                }
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching profile:', error.response?.data || error);
+            console.error('Error fetching profile:', error);
             throw error;
         }
     }
