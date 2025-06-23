@@ -20,10 +20,18 @@ const ContributionGraph = ({ data, onDayClick }) => {
       
       for (let day = 0; day < 7; day++) {
         const dateString = currentDate.toISOString().split('T')[0];
-        const level = data[dateString] || 0;
+        const steps = data[dateString] || 0;
+        
+        // Calculate level based on step count
+        let level = 0;
+        if (steps >= 7500) level = 4;
+        else if (steps >= 5000) level = 3;
+        else if (steps >= 3000) level = 2;
+        else if (steps >= 1500) level = 1;
         
         weekData.push({
           date: dateString,
+          steps: steps,
           level: level,
           dayOfWeek: day,
           isCurrentMonth: currentDate <= today
@@ -38,7 +46,7 @@ const ContributionGraph = ({ data, onDayClick }) => {
     return weeks;
   };
 
-  const getTooltipText = (date, level) => {
+  const getTooltipText = (date, steps) => {
     const dateObj = new Date(date);
     const options = { 
       weekday: 'long', 
@@ -48,16 +56,10 @@ const ContributionGraph = ({ data, onDayClick }) => {
     };
     const formattedDate = dateObj.toLocaleDateString('en-US', options);
     
-    if (level === 0) {
-      return `No workouts on ${formattedDate}`;
-    } else if (level === 1) {
-      return `Light workout on ${formattedDate}`;
-    } else if (level === 2) {
-      return `Moderate workout on ${formattedDate}`;
-    } else if (level === 3) {
-      return `Good workout on ${formattedDate}`;
+    if (steps === 0) {
+      return `No steps recorded on ${formattedDate}`;
     } else {
-      return `Intense workout on ${formattedDate}`;
+      return `${steps.toLocaleString()} steps on ${formattedDate}`;
     }
   };
 
@@ -98,8 +100,8 @@ const ContributionGraph = ({ data, onDayClick }) => {
                 <div
                   key={`${weekIndex}-${dayIndex}`}
                   className={`contribution-day level-${day.level}`}
-                  title={getTooltipText(day.date, day.level)}
-                  onClick={() => onDayClick(day.date, day.level)}
+                  title={getTooltipText(day.date, day.steps)}
+                  onClick={() => onDayClick(day.date, day.steps)}
                   style={{
                     opacity: day.isCurrentMonth ? 1 : 0.3
                   }}

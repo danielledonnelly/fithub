@@ -1,14 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Custom styles */
 body {
-  @apply m-0 font-sans antialiased bg-[#0d1117] text-[#c9d1d9];
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0d1117;
+  color: #c9d1d9;
 }
 
 code {
-  @apply font-mono;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }
 
 * {
@@ -16,61 +19,134 @@ code {
 }
 
 .container {
-  @apply max-w-7xl mx-auto px-5;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header {
+  background-color: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 16px 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #f0f6fc;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-link {
+  color: #c9d1d9;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: #21262d;
+  color: #f0f6fc;
+}
+
+.nav-link.active {
+  background-color: #21262d;
+  color: #f0f6fc;
 }
 
 .main-content {
-  @apply py-4;
+  padding: 40px 0;
 }
 
-/* Profile styles */
 .profile-section {
-  @apply flex justify-between gap-10 mb-10;
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
 }
 
 .profile-info {
-  @apply flex-1 max-w-[60%];
+  flex: 1;
 }
 
 .profile-avatar {
-  @apply w-[w-30] h-[w-30] rounded-full bg-[#30363d] flex items-center justify-center text-5xl text-[#7d8590] mb-5;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #30363d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #7d8590;
+  margin-bottom: 20px;
 }
 
 .profile-name {
-  @apply text-3xl font-bold text-[#f0f6fc] m-0 mb-2;
+  font-size: 28px;
+  font-weight: bold;
+  color: #f0f6fc;
+  margin: 0 0 8px 0;
 }
 
 .profile-bio {
-  @apply text-[#8b949e] m-0;
+  color: #8b949e;
+  margin: 0 0 16px 0;
 }
 
 .profile-stats {
-  @apply flex gap-6;
+  display: flex;
+  gap: 24px;
 }
 
 .stat {
-  @apply flex flex-col items-center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .stat-number {
-  @apply text-2xl font-bold text-[#f0f6fc];
+  font-size: 24px;
+  font-weight: bold;
+  color: #f0f6fc;
 }
 
 .stat-label {
-  @apply text-sm text-[#8b949e];
+  font-size: 14px;
+  color: #8b949e;
 }
 
-/* Contribution graph styles */
 .contribution-section {
-  @apply bg-[#161b22] border border-[#30363d] rounded-lg px-6 pt-2 pb-6 mb-10;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 24px;
+  margin-bottom: 40px;
 }
 
 .contribution-title {
-  @apply text-lg font-semibold text-[#f0f6fc] mb-4;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin: 0 0 16px 0;
 }
 
 .contribution-subtitle {
-  @apply text-sm text-[#8b949e] mb-6;
+  font-size: 14px;
+  color: #8b949e;
+  margin: 0 0 24px 0;
 }
 
 .contribution-graph {
@@ -163,7 +239,7 @@ code {
 }
 
 .contribution-day.level-3 {
-  @apply bg-[#b81818];
+  background-color: #b81818;
 }
 
 .contribution-day.level-4 {
@@ -171,57 +247,90 @@ code {
 }
 
 .contribution-content {
-  @apply flex gap-6 items-start;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
 }
 
 .contribution-graph-container {
-  @apply flex-1;
+  flex: 1;
 }
 
 .contribution-legend {
-  @apply flex items-center gap-2 text-xs text-[#8b949e] mt-4;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 16px;
 }
 
 .legend-item {
-  @apply flex items-center gap-1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .legend-square {
-  @apply w-3 h-3 rounded-sm border border-[#30363d];
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #30363d;
+}
+
+.legend-label {
+  color: #8b949e;
+  font-size: 11px;
 }
 
 .legend-square.level-0 {
-  @apply bg-[#161b22];
+  background-color: #161b22;
 }
 
 .legend-square.level-1 {
-  @apply bg-[#4a0808];
+  background-color: #4a0808;
 }
 
 .legend-square.level-2 {
-  @apply bg-[#7a1010];
+  background-color: #7a1010;
 }
 
 .legend-square.level-3 {
-  @apply bg-[#b81818];
+  background-color: #b81818;
 }
 
 .legend-square.level-4 {
-  @apply bg-[#e52020];
+  background-color: #e52020;
 }
 
 .current-streak {
-  @apply bg-[#21262d] border border-[#30363d] rounded-lg p-6 text-center min-w-[200px] shadow-sm;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  min-width: 200px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .streak-number {
-  @apply text-5xl font-bold text-[#e52020] mb-2 leading-none;
+  font-size: 48px;
+  font-weight: bold;
+  color: #e52020;
+  margin: 0 0 8px 0;
+  line-height: 1;
 }
 
 .streak-label {
-  @apply text-base text-[#c9d1d9] mb-1 font-medium;
+  font-size: 16px;
+  color: #c9d1d9;
+  margin: 0 0 4px 0;
+  font-weight: 500;
 }
 
 .streak-description {
-  @apply text-xs text-[#8b949e] m-0 italic;
+  font-size: 12px;
+  color: #8b949e;
+  margin: 0;
+  font-style: italic;
 } 

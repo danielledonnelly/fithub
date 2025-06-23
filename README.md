@@ -1,6 +1,6 @@
 # FitHub
 
-A GitHub-inspired fitness tracking app that helps you visualize your workout consistency with contribution squares.
+A GitHub-inspired fitness tracking app that helps you visualize your workout consistency with beautiful contribution squares.
 
 ## Features
 
@@ -40,7 +40,7 @@ npm start
 
 4. Open your browser and navigate to:
 ```
-http://localhost:3000/callback
+http://localhost:3000
 ```
 
 ## Usage
