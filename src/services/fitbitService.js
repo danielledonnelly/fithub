@@ -15,11 +15,7 @@ class FitbitService {
         if (!this.clientSecret) throw new Error('REACT_APP_FITBIT_CLIENT_SECRET is required');
         if (!this.redirectUri) throw new Error('REACT_APP_FITBIT_REDIRECT_URI is required');
 
-        console.log('FitbitService initialized with:', {
-            clientId: this.clientId,
-            redirectUri: this.redirectUri,
-            scope: this.scope
-        });
+        console.log('FitbitService initialized successfully');
     }
 
     getAuthUrl() {
@@ -31,7 +27,6 @@ class FitbitService {
             expires_in: '31536000' // Request a year-long token
         });
         const url = `${FITBIT_AUTH_URL}?${params.toString()}`;
-        console.log('Generated Auth URL:', url);
         return url;
     }
 
