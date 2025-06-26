@@ -1,6 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+const ACTIVITY_MODES = {
+  sedentary: {
+    name: 'Sedentary',
+    thresholds: [1500, 3000, 5000, 7500]
+  },
+  active: {
+    name: 'Active',
+    thresholds: [3000, 5000, 7500, 10000, 15000]
+  },
+  athletic: {
+    name: 'Athletic',
+    thresholds: [5000, 7500, 10000, 15000, 30000]
+  }
+};
 
 const ContributionGraph = ({ data, onDayClick }) => {
+  const [activityMode, setActivityMode] = useState('active');
+
   const generateYearData = () => {
     const weeks = [];
     const today = new Date();
@@ -8,13 +25,11 @@ const ContributionGraph = ({ data, onDayClick }) => {
     oneYearAgo.setFullYear(today.getFullYear() - 1);
     oneYearAgo.setDate(today.getDate() + 1);
     
-    // Start from the beginning of the week containing the date one year ago
     const startDate = new Date(oneYearAgo);
     startDate.setDate(startDate.getDate() - startDate.getDay());
     
     let currentDate = new Date(startDate);
     
-    // Generate 53 weeks to cover a full year
     for (let week = 0; week < 53; week++) {
       const weekData = [];
       
@@ -22,12 +37,15 @@ const ContributionGraph = ({ data, onDayClick }) => {
         const dateString = currentDate.toISOString().split('T')[0];
         const steps = data[dateString] || 0;
         
-        // Calculate level based on step count
+        // Calculate level based on selected mode's thresholds
+        const thresholds = ACTIVITY_MODES[activityMode].thresholds;
         let level = 0;
-        if (steps >= 7500) level = 4;
-        else if (steps >= 5000) level = 3;
-        else if (steps >= 3000) level = 2;
-        else if (steps >= 1500) level = 1;
+        for (let i = thresholds.length - 1; i >= 0; i--) {
+          if (steps >= thresholds[i]) {
+            level = i + 1;
+            break;
+          }
+        }
         
         weekData.push({
           date: dateString,
@@ -64,13 +82,12 @@ const ContributionGraph = ({ data, onDayClick }) => {
   };
 
   const weeks = generateYearData();
-
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const currentThresholds = ACTIVITY_MODES[activityMode].thresholds;
 
   return (
     <div className="contribution-graph">
       <div className="contribution-months">
-        {/* Month labels */}
         <div className="month-labels">
           {Array.from({ length: 12 }, (_, i) => {
             const date = new Date();
@@ -108,6 +125,47 @@ const ContributionGraph = ({ data, onDayClick }) => {
                 />
               ))}
             </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="contribution-footer">
+        <div className="contribution-legend">
+          <span>Less</span>
+          <div className="legend-items">
+            <div className="legend-item">
+              <div className="contribution-day level-0" />
+              <span>{`< ${currentThresholds[0].toLocaleString()}`}</span>
+            </div>
+            <div className="legend-item">
+              <div className="contribution-day level-1" />
+              <span>{`${currentThresholds[0].toLocaleString()}+`}</span>
+            </div>
+            <div className="legend-item">
+              <div className="contribution-day level-2" />
+              <span>{`${currentThresholds[1].toLocaleString()}+`}</span>
+            </div>
+            <div className="legend-item">
+              <div className="contribution-day level-3" />
+              <span>{`${currentThresholds[2].toLocaleString()}+`}</span>
+            </div>
+            <div className="legend-item">
+              <div className="contribution-day level-4" />
+              <span>{`${currentThresholds[3].toLocaleString()}+`}</span>
+            </div>
+          </div>
+          <span>More</span>
+        </div>
+
+        <div className="mode-selector">
+          {Object.entries(ACTIVITY_MODES).map(([mode, { name }]) => (
+            <button
+              key={mode}
+              className={`mode-button ${activityMode === mode ? 'active' : ''}`}
+              onClick={() => setActivityMode(mode)}
+            >
+              {name}
+            </button>
           ))}
         </div>
       </div>

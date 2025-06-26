@@ -68,30 +68,6 @@ const Dashboard = () => {
                 data={stepData} 
                 onDayClick={handleDayClick}
               />
-              
-              <div className="contribution-legend">
-                <span>Less</span>
-                <div className="legend-item">
-                  <div className="legend-square level-0"></div>
-                  <span className="legend-label">&lt; 1,500</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-square level-1"></div>
-                  <span className="legend-label">1,500+</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-square level-2"></div>
-                  <span className="legend-label">3,000+</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-square level-3"></div>
-                  <span className="legend-label">5,000+</span>
-                </div>
-                <div className="legend-item">
-                  <div className="legend-square level-4"></div>
-                  <span className="legend-label">7,500+</span>
-                </div>
-              </div>
             </div>
             
             <div className="current-streak">

@@ -248,12 +248,22 @@ code {
 
 .contribution-content {
   display: flex;
-  gap: 24px;
+  justify-content: space-between;
   align-items: flex-start;
+  gap: 24px;
 }
 
 .contribution-graph-container {
   flex: 1;
+}
+
+.contribution-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #30363d;
 }
 
 .contribution-legend {
@@ -261,76 +271,101 @@ code {
   align-items: center;
   gap: 16px;
   font-size: 12px;
-  color: #8b949e;
-  margin-top: 16px;
+  color: #7d8590;
+}
+
+.legend-items {
+  display: flex;
+  gap: 12px;
 }
 
 .legend-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
+  min-width: 48px; /* Ensure consistent width for number changes */
 }
 
-.legend-square {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid #30363d;
-}
-
-.legend-label {
-  color: #8b949e;
+.legend-item span {
   font-size: 11px;
+  color: #7d8590;
+  white-space: nowrap; /* Prevent wrapping of numbers */
 }
 
-.legend-square.level-0 {
-  background-color: #161b22;
+.mode-selector {
+  display: flex;
+  gap: 8px;
 }
 
-.legend-square.level-1 {
-  background-color: #4a0808;
+.mode-button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #c9d1d9;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.legend-square.level-2 {
-  background-color: #7a1010;
+.mode-button:hover {
+  background-color: #30363d;
+  border-color: #8b949e;
 }
 
-.legend-square.level-3 {
-  background-color: #b81818;
+.mode-button.active {
+  background-color: #388bfd;
+  border-color: #388bfd;
+  color: #ffffff;
 }
 
-.legend-square.level-4 {
-  background-color: #e52020;
+.mode-button.active:hover {
+  background-color: #1f6feb;
+  border-color: #1f6feb;
 }
 
 .current-streak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
   background-color: #21262d;
   border: 1px solid #30363d;
-  border-radius: 8px;
-  padding: 24px;
-  text-align: center;
-  min-width: 200px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  min-width: 120px;
 }
 
 .streak-number {
-  font-size: 48px;
+  font-size: 24px;
   font-weight: bold;
-  color: #e52020;
-  margin: 0 0 8px 0;
-  line-height: 1;
+  color: #f0f6fc;
+  margin-bottom: 4px;
 }
 
 .streak-label {
-  font-size: 16px;
-  color: #c9d1d9;
-  margin: 0 0 4px 0;
-  font-weight: 500;
+  font-size: 14px;
+  color: #8b949e;
+  margin-bottom: 2px;
 }
 
 .streak-description {
   font-size: 12px;
   color: #8b949e;
-  margin: 0;
   font-style: italic;
+}
+
+.contribution-scale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #7d8590;
+}
+
+.scale-boxes {
+  display: flex;
+  gap: 3px;
 } 
