@@ -3,12 +3,12 @@ import React from 'react';
 const Profile = ({ totalWorkouts, currentStreak }) => {
   return (
     <div className="profile-section">
-      <div className="profile-info">
-        <div className="profile-avatar">D</div>
-        <h1 className="profile-name">DANI</h1>
-        <p className="profile-bio"> 
-          LOCK IN LOCK IN LOCK IN aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAA
-        </p>
+      <div className="profile-avatar">D</div>
+      <div className="profile-content">
+        <div className="profile-header">
+          <h1 className="profile-name">DANI</h1>
+          <p className="profile-bio">LOCK IN LOCK IN LOCK IN</p>
+        </div>
         <div className="profile-stats">
           <div className="stat">
             <div className="stat-number">{totalWorkouts}</div>

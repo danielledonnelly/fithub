@@ -5,39 +5,61 @@ import Profile from '../components/Profile';
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
 
-  // Sample data - in a real app, this would come from an API
-  useEffect(() => {
-    const generateSampleData = () => {
-      const data = {};
-      const today = new Date();
-      const startDate = new Date(today);
-      startDate.setFullYear(startDate.getFullYear() - 1);
-      startDate.setDate(startDate.getDate() + 1);
+  const generateSampleData = () => {
+    const data = {};
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setFullYear(startDate.getFullYear() - 1);
+    startDate.setDate(startDate.getDate() + 1);
+    
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
       
-      for (let i = 0; i < 365; i++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + i);
-        const dateString = date.toISOString().split('T')[0];
-        
-        // Random step data between 0 and 10000
-        const random = Math.random();
-        if (random > 0.2) { // 80% chance of having steps
-          data[dateString] = Math.floor(random * 10000);
-        }
+      // Random step data between 0 and 10000
+      const random = Math.random();
+      if (random > 0.2) { // 80% chance of having steps
+        data[dateString] = Math.floor(random * 10000);
       }
-      
-      return data;
-    };
+    }
+    
+    return data;
+  };
 
-    setStepData(generateSampleData());
+  // Load data from localStorage or generate new data
+  useEffect(() => {
+    const savedData = localStorage.getItem('fithub-step-data');
+    if (savedData) {
+      try {
+        setStepData(JSON.parse(savedData));
+      } catch (error) {
+        console.error('Error parsing saved data:', error);
+        const newData = generateSampleData();
+        setStepData(newData);
+        localStorage.setItem('fithub-step-data', JSON.stringify(newData));
+      }
+    } else {
+      const newData = generateSampleData();
+      setStepData(newData);
+      localStorage.setItem('fithub-step-data', JSON.stringify(newData));
+    }
   }, []);
 
   const handleDayClick = (date, steps) => {
     const newSteps = steps === 0 ? 1500 : (steps >= 7500 ? 0 : steps + 1500);
-    setStepData(prev => ({
-      ...prev,
+    const updatedData = {
+      ...stepData,
       [date]: newSteps
-    }));
+    };
+    setStepData(updatedData);
+    localStorage.setItem('fithub-step-data', JSON.stringify(updatedData));
+  };
+
+  const handleRegenerateData = () => {
+    const newData = generateSampleData();
+    setStepData(newData);
+    localStorage.setItem('fithub-step-data', JSON.stringify(newData));
   };
 
   const calculateTotalSteps = () => {
@@ -57,7 +79,33 @@ const Dashboard = () => {
         />
         
         <div className="contribution-section">
-          <h2 className="contribution-title">Step Activity</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h2 className="contribution-title" style={{ margin: 0 }}>Step Activity</h2>
+            <button 
+              onClick={handleRegenerateData}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: '500',
+                color: '#c9d1d9',
+                backgroundColor: '#21262d',
+                border: '1px solid #30363d',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#30363d';
+                e.target.style.borderColor = '#8b949e';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#21262d';
+                e.target.style.borderColor = '#30363d';
+              }}
+            >
+              Regenerate Data
+            </button>
+          </div>
           <p className="contribution-subtitle">
             {calculateActiveDays()} active days in the last year
           </p>
