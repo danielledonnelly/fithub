@@ -239,23 +239,23 @@ code {
 }
 
 .contribution-day.level-0 {
-  background-color: #161b22;
+  background-color: rgba(229, 32, 32, 0.2);
 }
 
 .contribution-day.level-1 {
-  background-color: #4a0808;
+  background-color: rgba(229, 32, 32, 0.4);
 }
 
 .contribution-day.level-2 {
-  background-color: #7a1010;
+  background-color: rgba(229, 32, 32, 0.6);
 }
 
 .contribution-day.level-3 {
-  background-color: #b81818;
+  background-color: rgba(229, 32, 32, 0.8);
 }
 
 .contribution-day.level-4 {
-  background-color: #e52020;
+  background-color: #E52020;
 }
 
 .contribution-content {

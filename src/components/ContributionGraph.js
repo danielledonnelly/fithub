@@ -3,15 +3,15 @@ import React, { useState } from 'react';
 const ACTIVITY_MODES = {
   sedentary: {
     name: 'Sedentary',
-    thresholds: [1500, 3000, 5000, 7500]
+    thresholds: [1000, 2500, 4000, 6000]
   },
   active: {
     name: 'Active',
-    thresholds: [3000, 5000, 7500, 10000, 15000]
+    thresholds: [3000, 5000, 7500, 10000]
   },
   athletic: {
     name: 'Athletic',
-    thresholds: [5000, 7500, 10000, 15000, 30000]
+    thresholds: [5000, 7500, 12500, 20000]
   }
 };
 
@@ -39,11 +39,19 @@ const ContributionGraph = ({ data, onDayClick }) => {
         
         // Calculate level based on selected mode's thresholds
         const thresholds = ACTIVITY_MODES[activityMode].thresholds;
-        let level = 0;
-        for (let i = thresholds.length - 1; i >= 0; i--) {
-          if (steps >= thresholds[i]) {
-            level = i + 1;
-            break;
+        let level = null; // null for no data (blank square)
+        
+        if (steps > 0) {
+          if (steps < 1000) {
+            level = 0; // 20% opacity for steps under 1000
+          } else {
+            level = 0; // Default to level 0 (20% opacity)
+            for (let i = thresholds.length - 1; i >= 0; i--) {
+              if (steps >= thresholds[i]) {
+                level = i + 1;
+                break;
+              }
+            }
           }
         }
         
@@ -116,11 +124,12 @@ const ContributionGraph = ({ data, onDayClick }) => {
               {week.map((day, dayIndex) => (
                 <div
                   key={`${weekIndex}-${dayIndex}`}
-                  className={`contribution-day level-${day.level}`}
+                  className={`contribution-day ${day.level !== null ? `level-${day.level}` : ''}`}
                   title={getTooltipText(day.date, day.steps)}
                   onClick={() => onDayClick(day.date, day.steps)}
                   style={{
-                    opacity: day.isCurrentMonth ? 1 : 0.3
+                    opacity: day.isCurrentMonth ? 1 : 0.3,
+                    backgroundColor: day.level === null ? '#161b22' : undefined
                   }}
                 />
               ))}
