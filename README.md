@@ -1,4 +1,27 @@
-# FitHub
+# 🏋️ FitHub
+
+<div align="center">
+
+```
+███████╗██╗████████╗██╗  ██╗██╗   ██╗██████╗ 
+██╔════╝██║╚══██╔══╝██║  ██║██║   ██║██╔══██╗
+█████╗  ██║   ██║   ███████║██║   ██║██████╔╝
+██╔══╝  ██║   ██║   ██╔══██║██║   ██║██╔══██╗
+██║     ██║   ██║   ██║  ██║╚██████╔╝██████╔╝
+╚═╝     ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
+```
+
+**🎯 A GitHub-inspired fitness tracking app**
+
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+
+*Visualize your workout consistency with beautiful contribution squares*
+
+</div>
+
+---
 
 A GitHub-inspired fitness tracking app that helps you visualize your workout consistency with beautiful contribution squares.
 
