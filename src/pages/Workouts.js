@@ -1,266 +1,219 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import stepService from '../services/stepService';
 
 const Workouts = () => {
-  const [selectedWorkout, setSelectedWorkout] = useState('');
-  const [duration, setDuration] = useState('');
-  const [distance, setDistance] = useState('');
-  const [workoutHistory, setWorkoutHistory] = useState([]);
+  const [stepData, setStepData] = useState({});
+  const [activityLabels, setActivityLabels] = useState({}); // Store user-assigned labels
+  const [loading, setLoading] = useState(true);
 
-  const workoutTypes = [
-    { id: 'walk', name: 'Walk', description: 'Casual walking pace' },
-    { id: 'jog', name: 'Jog', description: 'Light jogging pace' },
-    { id: 'run', name: 'Run', description: 'Running at faster pace' }
-  ];
+  useEffect(() => {
+    fetchStepData();
+  }, []);
 
-  const handleWorkoutSubmit = (e) => {
-    e.preventDefault();
-    if (!selectedWorkout || !duration) {
-      alert('Please select a workout type and duration');
-      return;
+  const fetchStepData = async () => {
+    try {
+      setLoading(true);
+      const data = await stepService.getAllSteps();
+      setStepData(data);
+    } catch (error) {
+      console.error('Failed to fetch step data:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const newWorkout = {
-      id: Date.now(),
-      type: selectedWorkout,
-      duration: parseInt(duration),
-      distance: distance ? parseFloat(distance) : null,
-      date: new Date().toISOString().split('T')[0],
-      timestamp: new Date().toLocaleString()
-    };
+  const getRecentDays = (days = 7) => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
 
-    setWorkoutHistory([newWorkout, ...workoutHistory]);
+    const recent = [];
+    Object.entries(stepData).forEach(([date, steps]) => {
+      const dateObj = new Date(date);
+      if (dateObj >= startDate && dateObj <= endDate && steps > 0) {
+        recent.push({ date, steps });
+      }
+    });
+
+    return recent.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  const setActivityLabel = (date, activityType) => {
+    setActivityLabels(prev => ({
+      ...prev,
+      [date]: activityType
+    }));
+  };
+
+  const getActivitySummary = () => {
+    const recentDays = getRecentDays();
+    const summary = { walk: 0, jog: 0, run: 0, unlabeled: 0 };
     
-    // Reset form
-    setSelectedWorkout('');
-    setDuration('');
-    setDistance('');
+    recentDays.forEach(({ date, steps }) => {
+      const label = activityLabels[date];
+      if (label) {
+        summary[label] += steps;
+      } else {
+        summary.unlabeled += steps;
+      }
+    });
+
+    return summary;
   };
 
-  const getWorkoutTypeName = (type) => {
-    const workout = workoutTypes.find(w => w.id === type);
-    return workout ? workout.name : type;
-  };
+  const recentDays = getRecentDays();
+  const summary = getActivitySummary();
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="main-content">
+          <div style={{ textAlign: 'center', padding: '40px', color: '#c9d1d9' }}>
+            Loading step data...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
       <div className="main-content">
-        <h1 className="contribution-title">Workouts</h1>
+        {/* <h1 className="contribution-title">Activity Summary</h1>
         <p className="contribution-subtitle">
-          Track your walking, jogging, and running activities
-        </p>
+          Label your recent step activity and view a quick summary
+        </p> */}
 
-        {/* Workout Form */}
+        {/* Quick Summary */}
         <div className="contribution-section" style={{ marginBottom: '20px' }}>
-          <h2 className="contribution-title" style={{ margin: '0 0 20px 0' }}>Log New Workout</h2>
+          <h2 className="contribution-title" style={{ margin: '0 0 12px 0' }}>Last 7 Days</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#58a6ff' }}>
+                {summary.walk.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Walk</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#58a6ff' }}>
+                {summary.jog.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Jog</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#58a6ff' }}>
+                {summary.run.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Run</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: '#7d8590' }}>
+                {summary.unlabeled.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Unlabeled</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Days with Labeling */}
+        <div className="contribution-section">
+          <h2 className="contribution-title" style={{ margin: '0 0 12px 0' }}>Label Recent Activity</h2>
           
-          <form onSubmit={handleWorkoutSubmit}>
-            {/* Workout Type Selection */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '12px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#f0f6fc' 
-              }}>
-                Choose Workout Type
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-                {workoutTypes.map((workout) => (
-                  <div
-                    key={workout.id}
-                    onClick={() => setSelectedWorkout(workout.id)}
-                    style={{
-                      padding: '16px',
-                      backgroundColor: selectedWorkout === workout.id ? '#21262d' : '#0d1117',
-                      border: selectedWorkout === workout.id ? '1px solid #58a6ff' : '1px solid #30363d',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      textAlign: 'center'
-                    }}
-                    onMouseOver={(e) => {
-                      if (selectedWorkout !== workout.id) {
-                        e.target.style.backgroundColor = '#161b22';
-                        e.target.style.borderColor = '#8b949e';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (selectedWorkout !== workout.id) {
-                        e.target.style.backgroundColor = '#0d1117';
-                        e.target.style.borderColor = '#30363d';
-                      }
-                    }}
-                  >
-                    <h3 style={{ 
-                      margin: '0 0 4px 0', 
-                      fontSize: '16px', 
-                      fontWeight: '600', 
-                      color: '#f0f6fc' 
+          {recentDays.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#8b949e' }}>
+              <p style={{ margin: 0, fontSize: '14px' }}>No recent step data available</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {recentDays.slice(0, 5).map(({ date, steps }) => (
+                <div 
+                  key={date} 
+                  style={{
+                    padding: '12px',
+                    backgroundColor: '#0d1117',
+                    border: '1px solid #30363d',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div>
+                    <div style={{ 
+                      fontSize: '14px', 
+                      fontWeight: '500', 
+                      color: '#f0f6fc',
+                      marginBottom: '2px'
                     }}>
-                      {workout.name}
-                    </h3>
-                    <p style={{ 
-                      margin: 0, 
+                      {new Date(date).toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                    <div style={{ 
                       fontSize: '12px', 
                       color: '#8b949e' 
                     }}>
-                      {workout.description}
-                    </p>
+                      {steps.toLocaleString()} steps
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Duration and Distance */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#f0f6fc' 
-                }}>
-                  Duration (minutes) *
-                </label>
-                <input
-                  type="number"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="e.g., 30"
-                  min="1"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#f0f6fc' 
-                }}>
-                  Distance (miles) - Optional
-                </label>
-                <input
-                  type="number"
-                  value={distance}
-                  onChange={(e) => setDistance(e.target.value)}
-                  placeholder="e.g., 2.5"
-                  step="0.1"
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#ffffff',
-                backgroundColor: '#238636',
-                border: '1px solid #2ea043',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#2ea043';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = '#238636';
-              }}
-            >
-              Log Workout
-            </button>
-          </form>
-        </div>
-
-        {/* Workout History */}
-        <div className="contribution-section">
-          <h2 className="contribution-title" style={{ margin: '0 0 20px 0' }}>Recent Workouts</h2>
-          
-          {workoutHistory.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px 20px',
-              color: '#8b949e'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>💪</div>
-              <p style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c9d1d9' }}>No workouts logged yet</p>
-              <p style={{ margin: 0, fontSize: '14px' }}>Start by logging your first workout above!</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {workoutHistory.map((workout) => (
-                <div 
-                  key={workout.id} 
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h3 style={{ 
-                        margin: '0 0 4px 0', 
-                        fontSize: '16px', 
-                        fontWeight: '600', 
-                        color: '#f0f6fc' 
-                      }}>
-                        {getWorkoutTypeName(workout.type)}
-                      </h3>
-                      <p style={{ 
-                        margin: 0, 
-                        fontSize: '12px', 
-                        color: '#8b949e' 
-                      }}>
-                        {workout.timestamp}
-                      </p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ 
-                        fontSize: '18px', 
-                        fontWeight: '600', 
-                        color: '#f0f6fc' 
-                      }}>
-                        {workout.duration} min
-                      </div>
-                      {workout.distance && (
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#8b949e' 
-                        }}>
-                          {workout.distance} miles
-                        </div>
-                      )}
-                    </div>
+                  
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {['walk', 'jog', 'run'].map((activity) => (
+                      <button
+                        key={activity}
+                        onClick={() => setActivityLabel(date, activity)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                          color: activityLabels[date] === activity ? '#ffffff' : '#c9d1d9',
+                          backgroundColor: activityLabels[date] === activity ? '#238636' : '#21262d',
+                          border: activityLabels[date] === activity ? '1px solid #2ea043' : '1px solid #30363d',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          textTransform: 'capitalize'
+                        }}
+                        onMouseOver={(e) => {
+                          if (activityLabels[date] !== activity) {
+                            e.target.style.backgroundColor = '#30363d';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (activityLabels[date] !== activity) {
+                            e.target.style.backgroundColor = '#21262d';
+                          }
+                        }}
+                      >
+                        {activity}
+                      </button>
+                    ))}
+                    {activityLabels[date] && (
+                      <button
+                        onClick={() => setActivityLabel(date, null)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                          color: '#da3633',
+                          backgroundColor: '#21262d',
+                          border: '1px solid #30363d',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.backgroundColor = '#30363d';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.backgroundColor = '#21262d';
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

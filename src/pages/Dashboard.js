@@ -123,37 +123,8 @@ const Dashboard = () => {
         />
         
         <div className="contribution-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ marginBottom: '12px' }}>
             <h2 className="contribution-title" style={{ margin: 0 }}>Step Activity</h2>
-            <button 
-              onClick={handleRegenerateData}
-              disabled={loading}
-              style={{
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                color: loading ? '#7d8590' : '#c9d1d9',
-                backgroundColor: loading ? '#161b22' : '#21262d',
-                border: '1px solid #30363d',
-                borderRadius: '6px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = '#30363d';
-                  e.target.style.borderColor = '#8b949e';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = '#21262d';
-                  e.target.style.borderColor = '#30363d';
-                }
-              }}
-            >
-              {loading ? 'Loading...' : 'Regenerate Data'}
-            </button>
           </div>
           <p className="contribution-subtitle">
             {calculateActiveDays()} active days in the last year
@@ -170,6 +141,38 @@ const Dashboard = () => {
               <div className="streak-number">{calculateTotalSteps().toLocaleString()}</div>
               <div className="streak-label">Total Steps</div>
               <div className="streak-description">This Year</div>
+              
+              <button 
+                onClick={handleRegenerateData}
+                disabled={loading}
+                style={{
+                  marginTop: '24px',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: loading ? '#7d8590' : '#c9d1d9',
+                  backgroundColor: loading ? '#161b22' : '#21262d',
+                  border: '1px solid #30363d',
+                  borderRadius: '6px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  width: '100%'
+                }}
+                onMouseOver={(e) => {
+                  if (!loading) {
+                    e.target.style.backgroundColor = '#30363d';
+                    e.target.style.borderColor = '#8b949e';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!loading) {
+                    e.target.style.backgroundColor = '#21262d';
+                    e.target.style.borderColor = '#30363d';
+                  }
+                }}
+              >
+                {loading ? 'Regenerating...' : 'Regenerate Data'}
+              </button>
             </div>
           </div>
         </div>
