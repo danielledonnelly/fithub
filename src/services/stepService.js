@@ -53,7 +53,7 @@ class StepService {
 
   async getStepStats() {
     try {
-      const response = await fetch(`${API_BASE_URL}/steps/stats`);
+      const response = await fetch(`${API_BASE_URL}/steps/stats/summary`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

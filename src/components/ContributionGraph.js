@@ -15,7 +15,7 @@ const ACTIVITY_MODES = {
   }
 };
 
-const ContributionGraph = ({ data, onDayClick }) => {
+const ContributionGraph = ({ data }) => {
   const [activityMode, setActivityMode] = useState('active');
 
   const generateYearData = () => {
@@ -126,7 +126,6 @@ const ContributionGraph = ({ data, onDayClick }) => {
                   key={`${weekIndex}-${dayIndex}`}
                   className={`contribution-day ${day.level !== null ? `level-${day.level}` : ''}`}
                   title={getTooltipText(day.date, day.steps)}
-                  onClick={() => onDayClick(day.date, day.steps)}
                   style={{
                     opacity: day.isCurrentMonth ? 1 : 0.3,
                     backgroundColor: day.level === null ? '#161b22' : undefined

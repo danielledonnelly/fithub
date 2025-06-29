@@ -56,8 +56,13 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await stepService.regenerateStepData();
-      setStepData(response.data);
+      
+      // First regenerate the data on the backend
+      await stepService.regenerateStepData();
+      
+      // Then fetch the new data
+      const newData = await stepService.getAllSteps();
+      setStepData(newData);
     } catch (error) {
       console.error('Failed to regenerate step data:', error);
       setError('Failed to regenerate step data. Please try again.');
@@ -67,10 +72,12 @@ const Dashboard = () => {
   };
 
   const calculateTotalSteps = () => {
+    if (!stepData || typeof stepData !== 'object') return 0;
     return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
   };
 
   const calculateActiveDays = () => {
+    if (!stepData || typeof stepData !== 'object') return 0;
     return Object.values(stepData).filter(steps => steps > 0).length;
   };
 
@@ -155,8 +162,7 @@ const Dashboard = () => {
           <div className="contribution-content">
             <div className="contribution-graph-container">
               <ContributionGraph 
-                data={stepData} 
-                onDayClick={handleDayClick}
+                data={stepData}
               />
             </div>
             
