@@ -9,21 +9,37 @@ const Progress = () => {
   const [isEditingGoals, setIsEditingGoals] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
+    const fetchStepData = async () => {
+      try {
+        if (mounted) {
+          setLoading(true);
+        }
+        
+        const data = await stepService.getAllSteps();
+        
+        // Only update state if component is still mounted
+        if (mounted) {
+          setStepData(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch step data:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchStepData();
     loadGoals();
+    
+    // Cleanup function - sets mounted to false when component unmounts
+    return () => {
+      mounted = false;
+    };
   }, []);
-
-  const fetchStepData = async () => {
-    try {
-      setLoading(true);
-      const data = await stepService.getAllSteps();
-      setStepData(data);
-    } catch (error) {
-      console.error('Failed to fetch step data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadGoals = () => {
     const savedDailyGoal = localStorage.getItem('fithub_daily_goal');

@@ -7,20 +7,36 @@ const Workouts = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStepData();
-  }, []);
+    let mounted = true;
+    
+    const fetchStepData = async () => {
+      try {
+        if (mounted) {
+          setLoading(true);
+        }
+        
+        const data = await stepService.getAllSteps();
+        
+        // Only update state if component is still mounted
+        if (mounted) {
+          setStepData(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch step data:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const fetchStepData = async () => {
-    try {
-      setLoading(true);
-      const data = await stepService.getAllSteps();
-      setStepData(data);
-    } catch (error) {
-      console.error('Failed to fetch step data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchStepData();
+    
+    // Cleanup function - sets mounted to false when component unmounts
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const getRecentDays = (days = 7) => {
     const endDate = new Date();

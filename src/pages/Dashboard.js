@@ -10,23 +10,43 @@ const Dashboard = () => {
 
   // Load data from backend API
   useEffect(() => {
+    let mounted = true;
+    
     const fetchStepData = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        if (mounted) {
+          setLoading(true);
+          setError(null);
+        }
+        
         const data = await stepService.getAllSteps();
-        setStepData(data);
+        
+        // Only update state if component is still mounted
+        if (mounted) {
+          setStepData(data);
+        }
       } catch (error) {
         console.error('Failed to fetch step data:', error);
-        setError('Failed to load step data. Please make sure the server is running.');
-        // Fallback to empty data if API fails
-        setStepData({});
+        
+        // Only update state if component is still mounted
+        if (mounted) {
+          setError('Failed to load step data. Please make sure the server is running.');
+          // Fallback to empty data if API fails
+          setStepData({});
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStepData();
+    
+    // Cleanup function - sets mounted to false when component unmounts
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleDayClick = async (date, steps) => {
