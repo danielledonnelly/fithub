@@ -1,9 +1,19 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 class StepService {
+  // Get auth headers from localStorage
+  getAuthHeaders() {
+    const token = localStorage.getItem('fithub_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+
   async getAllSteps() {
     try {
-      const response = await fetch(`${API_BASE_URL}/steps`);
+      const response = await fetch(`${API_BASE_URL}/steps`, {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -20,6 +30,7 @@ class StepService {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
         },
         body: JSON.stringify({ steps }),
       });
@@ -39,6 +50,7 @@ class StepService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
         },
       });
       if (!response.ok) {
@@ -53,7 +65,11 @@ class StepService {
 
   async getStepStats() {
     try {
-      const response = await fetch(`${API_BASE_URL}/steps/stats/summary`);
+      const response = await fetch(`${API_BASE_URL}/steps/stats/summary`, {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -68,6 +84,9 @@ class StepService {
     try {
       const response = await fetch(`${API_BASE_URL}/steps/${date}`, {
         method: 'DELETE',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const stepService = require('../services/stepService');
+const { authenticateToken } = require('../middleware/auth');
 
 // Get all step data with optional date filtering
-router.get('/', (req, res) => {
+router.get('/', authenticateToken, (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const data = stepService.getAllSteps(startDate, endDate);
+    const userId = req.user.id;
+    const data = stepService.getAllSteps(userId, startDate, endDate);
     res.json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -14,10 +16,11 @@ router.get('/', (req, res) => {
 });
 
 // Get step data for a specific date
-router.get('/:date', (req, res) => {
+router.get('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
-    const steps = stepService.getStepsByDate(date);
+    const userId = req.user.id;
+    const steps = stepService.getStepsByDate(userId, date);
     res.json({ date, steps });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -25,11 +28,12 @@ router.get('/:date', (req, res) => {
 });
 
 // Update step data for a specific date
-router.put('/:date', (req, res) => {
+router.put('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
     const { steps } = req.body;
-    const result = stepService.updateSteps(date, steps);
+    const userId = req.user.id;
+    const result = stepService.updateSteps(userId, date, steps);
     res.json({ 
       message: 'Steps updated successfully',
       ...result
@@ -40,10 +44,11 @@ router.put('/:date', (req, res) => {
 });
 
 // Delete step data for a specific date
-router.delete('/:date', (req, res) => {
+router.delete('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
-    const deleted = stepService.deleteSteps(date);
+    const userId = req.user.id;
+    const deleted = stepService.deleteSteps(userId, date);
     
     if (deleted) {
       res.json({ message: 'Step data deleted successfully', date });
@@ -56,10 +61,11 @@ router.delete('/:date', (req, res) => {
 });
 
 // Get step statistics with optional date filtering
-router.get('/stats/summary', (req, res) => {
+router.get('/stats/summary', authenticateToken, (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const stats = stepService.getStepStats(startDate, endDate);
+    const userId = req.user.id;
+    const stats = stepService.getStepStats(userId, startDate, endDate);
     res.json(stats);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -67,9 +73,10 @@ router.get('/stats/summary', (req, res) => {
 });
 
 // Regenerate sample data (for development)
-router.post('/regenerate', (req, res) => {
+router.post('/regenerate', authenticateToken, (req, res) => {
   try {
-    const totalDays = stepService.regenerateData();
+    const userId = req.user.id;
+    const totalDays = stepService.regenerateData(userId);
     res.json({ 
       message: 'Step data regenerated successfully',
       totalDays

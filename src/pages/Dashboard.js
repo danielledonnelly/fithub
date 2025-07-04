@@ -15,28 +15,28 @@ const Dashboard = () => {
     const fetchStepData = async () => {
       try {
         if (mounted) {
-          setLoading(true);
-          setError(null);
+        setLoading(true);
+        setError(null);
         }
         
         const data = await stepService.getAllSteps();
         
         // Only update state if component is still mounted
         if (mounted) {
-          setStepData(data);
+        setStepData(data);
         }
       } catch (error) {
         console.error('Failed to fetch step data:', error);
         
         // Only update state if component is still mounted
         if (mounted) {
-          setError('Failed to load step data. Please make sure the server is running.');
-          // Fallback to empty data if API fails
-          setStepData({});
+        setError('Failed to load step data. Please make sure the server is running.');
+        // Fallback to empty data if API fails
+        setStepData({});
         }
       } finally {
         if (mounted) {
-          setLoading(false);
+        setLoading(false);
         }
       }
     };

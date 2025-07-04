@@ -1,10 +1,11 @@
-// Step data service - centralized step data management
+// Step data service - user-specific step data management
 // This will be replaced with database operations in the future
 
 class StepService {
   constructor() {
-    this.stepData = {};
-    this.initializeData();
+    // Store data per user: { userId: { stepData: {...} } }
+    this.userData = {};
+    this.initializeDefaultUser();
   }
 
   // Generate sample step data for development
@@ -30,19 +31,35 @@ class StepService {
     return data;
   }
 
-  // Initialize with sample data
-  initializeData() {
-    this.stepData = this.generateSampleStepData();
+  // Initialize default admin user with sample data
+  initializeDefaultUser() {
+    // Create sample data for admin user (id: 1)
+    this.userData[1] = {
+      stepData: this.generateSampleStepData()
+    };
   }
 
-  // Get all step data with optional date filtering
-  getAllSteps(startDate = null, endDate = null) {
+  // Get or create user data
+  getUserData(userId) {
+    if (!this.userData[userId]) {
+      this.userData[userId] = {
+        stepData: this.generateSampleStepData()
+      };
+    }
+    return this.userData[userId];
+  }
+
+  // Get all step data for a specific user with optional date filtering
+  getAllSteps(userId, startDate = null, endDate = null) {
+    const userData = this.getUserData(userId);
+    const stepData = userData.stepData;
+
     if (!startDate && !endDate) {
-      return this.stepData;
+      return stepData;
     }
 
     const filteredData = {};
-    Object.keys(this.stepData).forEach(date => {
+    Object.keys(stepData).forEach(date => {
       const dateObj = new Date(date);
       let includeDate = true;
       
@@ -54,23 +71,24 @@ class StepService {
       }
       
       if (includeDate) {
-        filteredData[date] = this.stepData[date];
+        filteredData[date] = stepData[date];
       }
     });
 
     return filteredData;
   }
 
-  // Get step data for a specific date
-  getStepsByDate(date) {
+  // Get step data for a specific user and date
+  getStepsByDate(userId, date) {
     if (!this.isValidDateFormat(date)) {
       throw new Error('Invalid date format. Use YYYY-MM-DD');
     }
-    return this.stepData[date] || 0;
+    const userData = this.getUserData(userId);
+    return userData.stepData[date] || 0;
   }
 
-  // Update step data for a specific date
-  updateSteps(date, steps) {
+  // Update step data for a specific user and date
+  updateSteps(userId, date, steps) {
     if (!this.isValidDateFormat(date)) {
       throw new Error('Invalid date format. Use YYYY-MM-DD');
     }
@@ -79,26 +97,28 @@ class StepService {
       throw new Error('Steps must be a non-negative number');
     }
     
-    this.stepData[date] = steps;
+    const userData = this.getUserData(userId);
+    userData.stepData[date] = steps;
     return { date, steps };
   }
 
-  // Delete step data for a specific date
-  deleteSteps(date) {
+  // Delete step data for a specific user and date
+  deleteSteps(userId, date) {
     if (!this.isValidDateFormat(date)) {
       throw new Error('Invalid date format. Use YYYY-MM-DD');
     }
     
-    if (this.stepData[date] !== undefined) {
-      delete this.stepData[date];
+    const userData = this.getUserData(userId);
+    if (userData.stepData[date] !== undefined) {
+      delete userData.stepData[date];
       return true;
     }
     return false;
   }
 
-  // Get step statistics with optional date filtering
-  getStepStats(startDate = null, endDate = null) {
-    const dataToAnalyze = this.getAllSteps(startDate, endDate);
+  // Get step statistics for a specific user with optional date filtering
+  getStepStats(userId, startDate = null, endDate = null) {
+    const dataToAnalyze = this.getAllSteps(userId, startDate, endDate);
     const stepValues = Object.values(dataToAnalyze);
     
     if (stepValues.length === 0) {
@@ -128,10 +148,11 @@ class StepService {
     };
   }
 
-  // Regenerate sample data
-  regenerateData() {
-    this.stepData = this.generateSampleStepData();
-    return Object.keys(this.stepData).length;
+  // Regenerate sample data for a specific user
+  regenerateData(userId) {
+    const userData = this.getUserData(userId);
+    userData.stepData = this.generateSampleStepData();
+    return Object.keys(userData.stepData).length;
   }
 
   // Validate date format

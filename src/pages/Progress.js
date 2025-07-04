@@ -10,25 +10,25 @@ const Progress = () => {
 
   useEffect(() => {
     let mounted = true;
-    
-    const fetchStepData = async () => {
-      try {
+
+  const fetchStepData = async () => {
+    try {
         if (mounted) {
-          setLoading(true);
+      setLoading(true);
         }
         
-        const data = await stepService.getAllSteps();
+      const data = await stepService.getAllSteps();
         
         // Only update state if component is still mounted
         if (mounted) {
-          setStepData(data);
+      setStepData(data);
         }
-      } catch (error) {
-        console.error('Failed to fetch step data:', error);
-      } finally {
+    } catch (error) {
+      console.error('Failed to fetch step data:', error);
+    } finally {
         if (mounted) {
-          setLoading(false);
-        }
+      setLoading(false);
+    }
       }
     };
 
