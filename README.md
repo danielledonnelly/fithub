@@ -42,17 +42,29 @@ cd fithub
 npm install
 ```
 
-3. Start the development server:
+3. Run the backend server:
 ```bash
+cd server
 npm start
 ```
 
-> **Note**: This project uses `npm start` to run the development server, not `npm run dev`. This is the standard command for React apps created with create-react-app.
+4. Start the development server:
+```bash
+cd fithub
+npm start
+```
 
-4. Open your browser and navigate to:
+5. Open your browser and navigate to:
 ```
 http://localhost:3000
 ```
+
+## Current Issues
+Data loss on server restart - all data is in-memory
+No user persistence - users disappear after restart
+No step data persistence - all step data lost on restart
+
+These wil be addressed once we add express-session
 
 ## Usage
 
@@ -85,6 +97,7 @@ Builds the app for production to the `build` folder.
 
 ## Structure
 fithub/
+```
 ├── **[Project Configuration]**
 │   ├── package.json              # Frontend dependencies & scripts
 │   ├── package-lock.json         # Frontend dependency lock file
@@ -149,7 +162,7 @@ fithub/
 └── Generated/System Files
     ├── node_modules/           # Frontend dependencies
     └── .git/                   # Git version control
-
+```
 
 ## Inspiration
 
