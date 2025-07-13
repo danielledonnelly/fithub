@@ -5,9 +5,8 @@ const UserModel = require('../models/User');
 const AuthService = require('../services/AuthService');
 const { 
   authenticateToken, 
-  generateToken, 
-  generateRefreshToken, 
-  verifyRefreshToken 
+  // generateToken, 
+  // generateRefreshToken, 
 } = require('../middleware/auth');
 
 // Zod schemas for validation
@@ -99,7 +98,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       message: 'Login successful',
-      user: userWithoutPassword,
+      user,
       token,
       refreshToken
     });
@@ -117,25 +116,18 @@ router.post('/refresh', async (req, res) => {
   try {
     const result = refreshSchema.safeParse(req.body);
 
-  if (!result.success) {
-    return res.status(400).json({
-      error: 'Validation failed',
-      details: result.error.errors
-   });
-  }
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: result.error.errors
+      });
+    }
 
-  const { refreshToken } = result.data;
+    const { refreshToken } = result.data;
 
-    // Verify refresh token
-    const decoded = verifyRefreshToken(refreshToken);
-    
-    // Find user
-    const user = UserService.findById(decoded.sub);
-
-    // Generate new tokens
-    const { password: _, ...userWithoutPassword } = user;
-    const newToken = generateToken(userWithoutPassword);
-    const newRefreshToken = generateRefreshToken(userWithoutPassword);
+    // Use AuthService to handle refresh token validation and new token generation
+    // This centralizes all authentication logic in AuthService instead of doing it manually
+    const { token: newToken, refreshToken: newRefreshToken } = await AuthService.refreshToken(refreshToken);
 
     res.json({
       message: 'Token refreshed successfully',
@@ -151,10 +143,11 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-// Get current user profile
-router.get('/profile', authenticateToken, (req, res) => {
+// Make route handler async so we can await the UserModel.findById call
+// Without async, we can't use await inside the function
+router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const user = UserService.findById(req.user.sub);
+    const user = await UserModel.findById(req.user.sub);
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
@@ -188,7 +181,9 @@ router.put('/profile', authenticateToken, async (req, res) => {
     }
 
     const updates = result.data;
-    const updatedUser = UserService.updateUser(req.user.sub, updates);
+
+    // Profile operations are NOW just data CRUD, not authentication business logic
+    const updatedUser = await UserModel.updateUser(req.user.sub, updates);
 
     res.json({
       message: 'Profile updated successfully',

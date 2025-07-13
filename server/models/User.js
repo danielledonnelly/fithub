@@ -1,19 +1,15 @@
 // server/models/User.js
+const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
-// In-memory storage (replace with database later)
-let users = [
-  {
-    id: 1,
-    username: 'admin',
-    email: 'admin@fithub.com',
-    // Pre-hashed "password" for testing
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-    createdAt: new Date('2025-07-13T00:34:29.557Z')
-  }
-];
-
-let nextId = 2;
+// Create MySQL connection pool
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'fithub'
+});
 
 class UserModel {
   // Create user
@@ -21,67 +17,104 @@ class UserModel {
     const { username, email, password } = userData;
     
     // Check if user already exists
-    if (this.findByEmail(email)) {
+    const existingUser = await this.findByEmail(email);
+    if (existingUser) {
       throw new Error('User already exists');
     }
     
-    // Hash password before storing (never store plain text)
+    // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const user = {
-      id: nextId++,
-      username,
-      email: email.toLowerCase(), // Normalize email for consistency
-      password: hashedPassword,
-      createdAt: new Date()
-    };
+    // Insert user into database
+    const [result] = await pool.query(
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+      [username, email.toLowerCase(), hashedPassword]
+    );
     
-    users.push(user);
-    return { ...user, password: undefined }; // Never return password to client
+    // Return user without password
+    return {
+      id: result.insertId,
+      username,
+      email: email.toLowerCase()
+    };
   }
 
   // Get user by ID
-  static findById(id) {
-    const user = users.find(u => u.id === id);
-    return user ? { ...user, password: undefined } : null;
+  static async findById(id) {
+    const [rows] = await pool.query(
+      'SELECT id, username, email FROM users WHERE id = ?',
+      [id]
+    );
+    return rows[0] || null;
   }
 
   // Get user by email
-  static findByEmail(email) {
-    const user = users.find(u => u.email === email.toLowerCase());
-    return user ? { ...user, password: undefined } : null;
+  static async findByEmail(email) {
+    const [rows] = await pool.query(
+      'SELECT id, username, email FROM users WHERE email = ?',
+      [email.toLowerCase()]
+    );
+    return rows[0] || null;
   }
 
   // Update user
-  static updateUser(id, updates) {
-    const userIndex = users.findIndex(u => u.id === id);
-    if (userIndex === -1) {
+  static async updateUser(id, updates) {
+    // Build dynamic update query
+    const fields = [];
+    const values = [];
+    
+    if (updates.username) {
+      fields.push('username = ?');
+      values.push(updates.username);
+    }
+    if (updates.email) {
+      fields.push('email = ?');
+      values.push(updates.email.toLowerCase());
+    }
+    
+    if (fields.length === 0) {
+      throw new Error('No valid fields to update');
+    }
+    
+    values.push(id);
+    
+    const [result] = await pool.query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
+    
+    if (result.affectedRows === 0) {
       throw new Error('User not found');
     }
     
-    // Merge existing user with updates (allows partial updates)
-    users[userIndex] = { ...users[userIndex], ...updates };
-    return { ...users[userIndex], password: undefined };
+    return await this.findById(id);
   }
 
   // Delete user
-  static deleteUser(id) {
-    const userIndex = users.findIndex(u => u.id === id);
-    if (userIndex === -1) {
+  static async deleteUser(id) {
+    const [result] = await pool.query(
+      'DELETE FROM users WHERE id = ?',
+      [id]
+    );
+    
+    if (result.affectedRows === 0) {
       throw new Error('User not found');
     }
     
-    const deletedUser = users.splice(userIndex, 1)[0];
-    return { ...deletedUser, password: undefined };
+    return { id };
   }
 
-  // Validate password (internal method used by AuthService)
+  // Validate password (internal method)
   static async validatePassword(user, password) {
-    const fullUser = users.find(u => u.id === user.id);
-    if (!fullUser) return false;
+    const [rows] = await pool.query(
+      'SELECT password FROM users WHERE id = ?',
+      [user.id]
+    );
+    
+    if (rows.length === 0) return false;
     
     // Compare provided password with stored hash
-    return bcrypt.compare(password, fullUser.password);
+    return bcrypt.compare(password, rows[0].password);
   }
 }
 

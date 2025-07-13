@@ -99,5 +99,4 @@ class StepService {
   }
 }
 
-const StepService = new StepService();
 export default StepService; 

@@ -1,5 +1,6 @@
 // Step data service - user-specific step data management
 // This will be replaced with database operations in the future
+const StepModel = require('../models/Step');
 
 class StepService {
   constructor() {
@@ -50,45 +51,56 @@ class StepService {
   }
 
   // Get all step data for a specific user with optional date filtering
-  getAllSteps(userId, startDate = null, endDate = null) {
-    const userData = this.getUserData(userId);
-    const stepData = userData.stepData;
+  async getAllSteps(userId, startDate = null, endDate = null) {
+    try {
+      return await StepModel.getAllSteps(userId, startDate, endDate);
+    } catch (error) {
+      // Fallback to in-memory data if database fails
+      const userData = this.getUserData(userId);
+      const stepData = userData.stepData;
 
-    if (!startDate && !endDate) {
-      return stepData;
+      if (!startDate && !endDate) {
+        return stepData;
+      }
+
+      const filteredData = {};
+      Object.keys(stepData).forEach(date => {
+        const dateObj = new Date(date);
+        let includeDate = true;
+        
+        if (startDate && dateObj < new Date(startDate)) {
+          includeDate = false;
+        }
+        if (endDate && dateObj > new Date(endDate)) {
+          includeDate = false;
+        }
+        
+        if (includeDate) {
+          filteredData[date] = stepData[date];
+        }
+      });
+
+      return filteredData;
     }
-
-    const filteredData = {};
-    Object.keys(stepData).forEach(date => {
-      const dateObj = new Date(date);
-      let includeDate = true;
-      
-      if (startDate && dateObj < new Date(startDate)) {
-        includeDate = false;
-      }
-      if (endDate && dateObj > new Date(endDate)) {
-        includeDate = false;
-      }
-      
-      if (includeDate) {
-        filteredData[date] = stepData[date];
-      }
-    });
-
-    return filteredData;
   }
 
   // Get step data for a specific user and date
-  getStepsByDate(userId, date) {
+  async getStepsByDate(userId, date) {
     if (!this.isValidDateFormat(date)) {
       throw new Error('Invalid date format. Use YYYY-MM-DD');
     }
-    const userData = this.getUserData(userId);
-    return userData.stepData[date] || 0;
+    
+    try {
+      return await StepModel.getStepsByDate(userId, date);
+    } catch (error) {
+      // Fallback to in-memory data if database fails
+      const userData = this.getUserData(userId);
+      return userData.stepData[date] || 0;
+    }
   }
 
   // Update step data for a specific user and date
-  updateSteps(userId, date, steps) {
+  async updateSteps(userId, date, steps) {
     if (!this.isValidDateFormat(date)) {
       throw new Error('Invalid date format. Use YYYY-MM-DD');
     }
@@ -97,55 +109,70 @@ class StepService {
       throw new Error('Steps must be a non-negative number');
     }
     
-    const userData = this.getUserData(userId);
-    userData.stepData[date] = steps;
-    return { date, steps };
+    try {
+      return await StepModel.updateSteps(userId, date, steps);
+    } catch (error) {
+      // Fallback to in-memory data if database fails
+      const userData = this.getUserData(userId);
+      userData.stepData[date] = steps;
+      return { date, steps };
+    }
   }
 
   // Delete step data for a specific user and date
-  deleteSteps(userId, date) {
+  async deleteSteps(userId, date) {
     if (!this.isValidDateFormat(date)) {
       throw new Error('Invalid date format. Use YYYY-MM-DD');
     }
     
-    const userData = this.getUserData(userId);
-    if (userData.stepData[date] !== undefined) {
-      delete userData.stepData[date];
-      return true;
+    try {
+      return await StepModel.deleteSteps(userId, date);
+    } catch (error) {
+      // Fallback to in-memory data if database fails
+      const userData = this.getUserData(userId);
+      if (userData.stepData[date] !== undefined) {
+        delete userData.stepData[date];
+        return true;
+      }
+      return false;
     }
-    return false;
   }
 
   // Get step statistics for a specific user with optional date filtering
-  getStepStats(userId, startDate = null, endDate = null) {
-    const dataToAnalyze = this.getAllSteps(userId, startDate, endDate);
-    const stepValues = Object.values(dataToAnalyze);
-    
-    if (stepValues.length === 0) {
+  async getStepStats(userId, startDate = null, endDate = null) {
+    try {
+      return await StepModel.getStepStats(userId, startDate, endDate);
+    } catch (error) {
+      // Fallback to in-memory calculation if database fails
+      const dataToAnalyze = await this.getAllSteps(userId, startDate, endDate);
+      const stepValues = Object.values(dataToAnalyze);
+      
+      if (stepValues.length === 0) {
+        return {
+          totalSteps: 0,
+          activeDays: 0,
+          totalDays: 0,
+          averageSteps: 0,
+          maxSteps: 0,
+          minSteps: 0
+        };
+      }
+      
+      const totalSteps = stepValues.reduce((sum, steps) => sum + steps, 0);
+      const activeDays = stepValues.filter(steps => steps > 0).length;
+      const averageSteps = activeDays > 0 ? Math.round(totalSteps / activeDays) : 0;
+      const maxSteps = Math.max(...stepValues);
+      const minSteps = stepValues.length > 0 ? Math.min(...stepValues.filter(steps => steps > 0)) : 0;
+      
       return {
-        totalSteps: 0,
-        activeDays: 0,
-        totalDays: 0,
-        averageSteps: 0,
-        maxSteps: 0,
-        minSteps: 0
+        totalSteps,
+        activeDays,
+        totalDays: Object.keys(dataToAnalyze).length,
+        averageSteps,
+        maxSteps,
+        minSteps
       };
     }
-    
-    const totalSteps = stepValues.reduce((sum, steps) => sum + steps, 0);
-    const activeDays = stepValues.filter(steps => steps > 0).length;
-    const averageSteps = activeDays > 0 ? Math.round(totalSteps / activeDays) : 0;
-    const maxSteps = Math.max(...stepValues);
-    const minSteps = stepValues.length > 0 ? Math.min(...stepValues.filter(steps => steps > 0)) : 0;
-    
-    return {
-      totalSteps,
-      activeDays,
-      totalDays: Object.keys(dataToAnalyze).length,
-      averageSteps,
-      maxSteps,
-      minSteps
-    };
   }
 
   // Regenerate sample data for a specific user
@@ -171,4 +198,4 @@ class StepService {
 }
 
 // Export singleton instance
-module.exports = new StepService(); 
+module.exports = new StepService();

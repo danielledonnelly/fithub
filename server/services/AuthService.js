@@ -2,13 +2,42 @@
 // Handles all authentication business logic including login, register, token validation, and refresh
 // Separates authentication logic from data operations (UserModel) and HTTP handling (routes)
 const UserModel = require('../models/User');
-const { generateToken, generateRefreshToken } = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
+
+// Define token generation functions locally to avoid circular dependency
+const generateToken = (user) => {
+  return jwt.sign(
+    { 
+      sub: user.id, 
+      username: user.username, 
+      email: user.email 
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+};
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { 
+      sub: user.id, 
+      username: user.username, 
+      email: user.email,
+      type: 'refresh'
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+};
 
 class AuthService {
   // Login user
   static async login(email, password) {
     // Get user (without password)
-    const user = UserModel.findByEmail(email);
+    // UserModel methods are async (they query the database), so we must await them
+    // Without await, we get a Promise object instead of the actual user data
+    const user = await UserModel.findByEmail(email);
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -32,26 +61,28 @@ class AuthService {
 
   // Register new user
   static async register(userData) {
-    const { user, token, refreshToken } = await AuthService.register({ username, email, password });
-
-    return {
-      user,
-      token,
-      refreshToken
-    };
+    // Create new user in database
+    const user = await UserModel.createUser(userData);
+    
+    // Generate tokens for new user
+    const token = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
+    
+    return { user, token, refreshToken };
   }
 
   // Check if user is authenticated (verify token and get user)
   static async checkAuth(token) {
     try {
       const jwt = require('jsonwebtoken');
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+      const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
       
       // Verify token and decode payload
       const decoded = jwt.verify(token, JWT_SECRET);
       
-      // Get user from database using sub claim
-      const user = UserModel.findById(decoded.sub);
+      // Database queries are asynchronous operations that return Promises
+      // We must await to get the actual user data from the database
+      const user = await UserModel.findById(decoded.sub);
       if (!user) {
         throw new Error('User not found');
       }
@@ -66,7 +97,7 @@ class AuthService {
   static async refreshToken(refreshToken) {
     try {
       const jwt = require('jsonwebtoken');
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+      const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
       
       // Verify refresh token
       const decoded = jwt.verify(refreshToken, JWT_SECRET);
@@ -76,8 +107,9 @@ class AuthService {
         throw new Error('Invalid refresh token');
       }
       
-      // Get user from database using sub claim
-      const user = UserModel.findById(decoded.sub);
+      // UserModel.findById performs a database query which is async
+      // await ensures we get the user data before proceeding with token generation
+      const user = await UserModel.findById(decoded.sub);
       if (!user) {
         throw new Error('User not found');
       }

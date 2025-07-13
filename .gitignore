@@ -28,3 +28,11 @@ yarn-error.log*
 
 # OS
 Thumbs.db 
+
+# Test files
+server/test-*.js
+server/test-connection.js
+server/test-db.js
+server/test-env.js
+server/test-hash.js
+server/test-login.js
