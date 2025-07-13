@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const stepService = require('../services/stepService');
+const StepService = require('../services/StepService');
 const { authenticateToken } = require('../middleware/auth');
 
 // Get all step data with optional date filtering
@@ -8,7 +8,7 @@ router.get('/', authenticateToken, (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const userId = req.user.sub;
-    const data = stepService.getAllSteps(userId, startDate, endDate);
+    const data = StepService.getAllSteps(userId, startDate, endDate);
     res.json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -20,7 +20,7 @@ router.get('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
     const userId = req.user.sub;
-    const steps = stepService.getStepsByDate(userId, date);
+    const steps = StepService.getStepsByDate(userId, date);
     res.json({ date, steps });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -33,7 +33,7 @@ router.put('/:date', authenticateToken, (req, res) => {
     const { date } = req.params;
     const { steps } = req.body;
     const userId = req.user.sub;
-    const result = stepService.updateSteps(userId, date, steps);
+    const result = StepService.updateSteps(userId, date, steps);
     res.json({ 
       message: 'Steps updated successfully',
       ...result
@@ -48,7 +48,7 @@ router.delete('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
     const userId = req.user.sub;
-    const deleted = stepService.deleteSteps(userId, date);
+    const deleted = StepService.deleteSteps(userId, date);
     
     if (deleted) {
       res.json({ message: 'Step data deleted successfully', date });
@@ -65,7 +65,7 @@ router.get('/stats/summary', authenticateToken, (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const userId = req.user.sub;
-    const stats = stepService.getStepStats(userId, startDate, endDate);
+    const stats = StepService.getStepStats(userId, startDate, endDate);
     res.json(stats);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -76,7 +76,7 @@ router.get('/stats/summary', authenticateToken, (req, res) => {
 router.post('/regenerate', authenticateToken, (req, res) => {
   try {
     const userId = req.user.sub;
-    const totalDays = stepService.regenerateData(userId);
+    const totalDays = StepService.regenerateData(userId);
     res.json({ 
       message: 'Step data regenerated successfully',
       totalDays

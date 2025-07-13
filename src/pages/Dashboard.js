@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ContributionGraph from '../components/ContributionGraph';
 import Profile from '../components/Profile';
-import stepService from '../services/stepService';
+import StepService from '../services/StepService';
 
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
@@ -19,7 +19,7 @@ const Dashboard = () => {
         setError(null);
         }
         
-        const data = await stepService.getAllSteps();
+        const data = await StepService.getAllSteps();
         
         // Only update state if component is still mounted
         if (mounted) {
@@ -61,7 +61,7 @@ const Dashboard = () => {
       setStepData(updatedData);
 
       // Update backend
-      await stepService.updateSteps(date, newSteps);
+      await StepService.updateSteps(date, newSteps);
     } catch (error) {
       console.error('Failed to update step data:', error);
       // Revert optimistic update on error
@@ -78,10 +78,10 @@ const Dashboard = () => {
       setError(null);
       
       // First regenerate the data on the backend
-      await stepService.regenerateStepData();
+      await StepService.regenerateStepData();
       
       // Then fetch the new data
-      const newData = await stepService.getAllSteps();
+      const newData = await StepService.getAllSteps();
       setStepData(newData);
     } catch (error) {
       console.error('Failed to regenerate step data:', error);

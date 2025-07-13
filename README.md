@@ -136,7 +136,7 @@ fithub/
 │       │   └── ProfileContext.js # User profile state
 │       │
 │       └── services/             # Frontend API services
-│           ├── stepService.js    # Step data API calls
+│           ├── StepService.js    # Step data API calls
 │
 ├── Backend API (Node.js/Express)
 │   └── server/

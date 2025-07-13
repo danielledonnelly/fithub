@@ -1,7 +1,8 @@
 const express = require('express');
 const { z } = require('zod');
 const router = express.Router();
-const UserService = require('../models/User');
+const UserModel = require('../models/User');
+const AuthService = require('../services/AuthService');
 const { 
   authenticateToken, 
   generateToken, 
@@ -59,12 +60,9 @@ router.post('/register', async (req, res) => {
 
     const { username, email, password } = result.data;
 
-    // Create user
-    const user = await UserService.createUser({ username, email, password });
-
-    // Generate tokens
-    const token = generateToken(user);
-    const refreshToken = generateRefreshToken(user);
+    // Use AuthService instead of direct UserModel calls
+    // AuthService handles user creation AND token generation
+    const { user, token, refreshToken } = await AuthService.register({ username, email, password });
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -95,28 +93,9 @@ router.post('/login', async (req, res) => {
 
     const { email, password } = result.data;
 
-    // Find user
-    const user = UserService.findByEmail(email);
-    if (!user) {
-      return res.status(401).json({
-        error: 'Invalid credentials',
-        message: 'Email or password is incorrect'
-      });
-    }
-
-    // Validate password
-    const isValidPassword = await UserService.validatePassword(user, password);
-    if (!isValidPassword) {
-      return res.status(401).json({
-        error: 'Invalid credentials',
-        message: 'Email or password is incorrect'
-      });
-    }
-
-    // Generate tokens
-    const { password: _, ...userWithoutPassword } = user;
-    const token = generateToken(userWithoutPassword);
-    const refreshToken = generateRefreshToken(userWithoutPassword);
+    // Use AuthService instead of manual user lookup and password validation
+    // AuthService handles all authentication logic in one place
+    const { user, token, refreshToken } = await AuthService.login(email, password); 
 
     res.json({
       message: 'Login successful',

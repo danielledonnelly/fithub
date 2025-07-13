@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import stepService from '../services/stepService';
+import StepService from '../services/StepService';
 
 const Progress = () => {
   const [stepData, setStepData] = useState({});
@@ -17,7 +17,7 @@ const Progress = () => {
       setLoading(true);
         }
         
-      const data = await stepService.getAllSteps();
+      const data = await StepService.getAllSteps();
         
         // Only update state if component is still mounted
         if (mounted) {
