@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 router.get('/', authenticateToken, (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const data = stepService.getAllSteps(userId, startDate, endDate);
     res.json(data);
   } catch (error) {
@@ -19,7 +19,7 @@ router.get('/', authenticateToken, (req, res) => {
 router.get('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const steps = stepService.getStepsByDate(userId, date);
     res.json({ date, steps });
   } catch (error) {
@@ -32,7 +32,7 @@ router.put('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
     const { steps } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const result = stepService.updateSteps(userId, date, steps);
     res.json({ 
       message: 'Steps updated successfully',
@@ -47,7 +47,7 @@ router.put('/:date', authenticateToken, (req, res) => {
 router.delete('/:date', authenticateToken, (req, res) => {
   try {
     const { date } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const deleted = stepService.deleteSteps(userId, date);
     
     if (deleted) {
@@ -64,7 +64,7 @@ router.delete('/:date', authenticateToken, (req, res) => {
 router.get('/stats/summary', authenticateToken, (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const stats = stepService.getStepStats(userId, startDate, endDate);
     res.json(stats);
   } catch (error) {
@@ -75,7 +75,7 @@ router.get('/stats/summary', authenticateToken, (req, res) => {
 // Regenerate sample data (for development)
 router.post('/regenerate', authenticateToken, (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.sub;
     const totalDays = stepService.regenerateData(userId);
     res.json({ 
       message: 'Step data regenerated successfully',

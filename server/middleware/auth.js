@@ -49,11 +49,11 @@ const optionalAuth = (req, res, next) => {
   });
 };
 
-// Generate JWT token
+// Generate access token (short-lived, allows resource access, automatically sent with every API request)
 const generateToken = (user) => {
   return jwt.sign(
     { 
-      id: user.id, 
+      sub: user.id, 
       username: user.username, 
       email: user.email 
     },
@@ -62,11 +62,11 @@ const generateToken = (user) => {
   );
 };
 
-// Generate refresh token (longer lived)
+// Generate refresh token (longer lived, allows you to obtain new access tokens; When access token expires, you use the refresh token to get a new access token)
 const generateRefreshToken = (user) => {
   return jwt.sign(
     { 
-      id: user.id, 
+      sub: user.id, 
       username: user.username, 
       email: user.email,
       type: 'refresh'

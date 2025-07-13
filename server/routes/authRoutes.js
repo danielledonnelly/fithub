@@ -151,7 +151,7 @@ router.post('/refresh', async (req, res) => {
     const decoded = verifyRefreshToken(refreshToken);
     
     // Find user
-    const user = UserService.findById(decoded.id);
+    const user = UserService.findById(decoded.sub);
 
     // Generate new tokens
     const { password: _, ...userWithoutPassword } = user;
@@ -175,7 +175,7 @@ router.post('/refresh', async (req, res) => {
 // Get current user profile
 router.get('/profile', authenticateToken, (req, res) => {
   try {
-    const user = UserService.findById(req.user.id);
+    const user = UserService.findById(req.user.sub);
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
@@ -209,7 +209,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
     }
 
     const updates = result.data;
-    const updatedUser = UserService.updateUser(req.user.id, updates);
+    const updatedUser = UserService.updateUser(req.user.sub, updates);
 
     res.json({
       message: 'Profile updated successfully',
