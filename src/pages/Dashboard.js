@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ContributionGraph from '../components/ContributionGraph';
 import Profile from '../components/Profile';
 import StepService from '../services/StepService';
+import LogStepsForm from '../components/LogStepsForm';
 // import dummySteps from '../data/dummySteps';
 
 const Dashboard = () => {
@@ -151,44 +152,10 @@ const Dashboard = () => {
                 data={stepData}
               />
             </div>
-            
             <div className="current-streak">
-              <div className="streak-number">{calculateTotalSteps().toLocaleString()}</div>
-              <div className="streak-label">Total Steps</div>
-              <div className="streak-description">This Year</div>
-              
-              <button 
-                onClick={handleRegenerateData}
-                disabled={loading}
-                style={{
-                  marginTop: '24px',
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: loading ? '#7d8590' : '#c9d1d9',
-                  backgroundColor: loading ? '#161b22' : '#21262d',
-                  border: '1px solid #30363d',
-                  borderRadius: '6px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                  width: '100%'
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) {
-                    e.target.style.backgroundColor = '#30363d';
-                    e.target.style.borderColor = '#8b949e';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) {
-                    e.target.style.backgroundColor = '#21262d';
-                    e.target.style.borderColor = '#30363d';
-                  }
-                }}
-              >
-                {loading ? 'Regenerating...' : 'Regenerate Data'}
-              </button>
-            </div>
+  <LogStepsForm onSuccess={() => window.location.reload()} />
+</div>
+            
           </div>
         </div>
       </div>
