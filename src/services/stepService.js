@@ -99,4 +99,4 @@ class StepService {
   }
 }
 
-export default StepService; 
+export default new StepService();

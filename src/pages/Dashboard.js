@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ContributionGraph from '../components/ContributionGraph';
 import Profile from '../components/Profile';
 import StepService from '../services/StepService';
+// import dummySteps from '../data/dummySteps';
 
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
@@ -11,38 +12,32 @@ const Dashboard = () => {
   // Load data from backend API
   useEffect(() => {
     let mounted = true;
-    
+
     const fetchStepData = async () => {
       try {
         if (mounted) {
-        setLoading(true);
-        setError(null);
+          setLoading(true);
+          setError(null);
         }
-        
         const data = await StepService.getAllSteps();
-        
-        // Only update state if component is still mounted
         if (mounted) {
-        setStepData(data);
+          setStepData(data);
         }
       } catch (error) {
         console.error('Failed to fetch step data:', error);
-        
-        // Only update state if component is still mounted
         if (mounted) {
-        setError('Failed to load step data. Please make sure the server is running.');
-        // Fallback to empty data if API fails
-        setStepData({});
+          setError('Failed to load step data. Please make sure the server is running.');
+          setStepData({});
         }
       } finally {
         if (mounted) {
-        setLoading(false);
+          setLoading(false);
         }
       }
     };
 
     fetchStepData();
-    
+
     // Cleanup function - sets mounted to false when component unmounts
     return () => {
       mounted = false;
@@ -52,7 +47,7 @@ const Dashboard = () => {
   const handleDayClick = async (date, steps) => {
     try {
       const newSteps = steps === 0 ? 1500 : (steps >= 7500 ? 0 : steps + 1500);
-      
+
       // Optimistically update UI
       const updatedData = {
         ...stepData,
@@ -76,10 +71,10 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // First regenerate the data on the backend
       await StepService.regenerateStepData();
-      
+
       // Then fetch the new data
       const newData = await StepService.getAllSteps();
       setStepData(newData);
@@ -139,7 +134,7 @@ const Dashboard = () => {
 
         <Profile 
           totalWorkouts={calculateActiveDays()}
-          currentStreak={0} // This prop is no longer used but kept for compatibility
+          currentStreak={0}
         />
         
         <div className="contribution-section">
@@ -201,4 +196,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
