@@ -50,11 +50,21 @@ class StepModel {
 
   // Update or insert steps for a specific date
   static async updateSteps(userId, date, steps) {
+    // Fetch current steps for this user/date
+    const [rows] = await pool.query(
+      'SELECT steps FROM steps WHERE user_id = ? AND date = ?',
+      [userId, date]
+    );
+    console.log('Updating steps:', { userId, date, steps, found: rows.length > 0, current: rows[0]?.steps });
+    let newTotal = steps;
+    if (rows.length > 0) {
+      newTotal += rows[0].steps;
+    }
     const [result] = await pool.query(
       'INSERT INTO steps (user_id, date, steps) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE steps = ?',
-      [userId, date, steps, steps]
+      [userId, date, newTotal, newTotal]
     );
-    return { date, steps };
+    return { date, steps: newTotal };
   }
 
   // Delete steps for a specific date
