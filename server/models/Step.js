@@ -6,7 +6,8 @@ const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'fithub'
+  database: 'fithub',
+  dateStrings: true // Ensures DATE columns are returned as strings
 });
 
 class StepModel {
@@ -31,7 +32,8 @@ class StepModel {
     // Convert to the format expected by frontend
     const stepData = {};
     rows.forEach(row => {
-      stepData[row.date.toISOString().split('T')[0]] = row.steps;
+      // row.date is now a string in 'YYYY-MM-DD' format
+      stepData[row.date] = row.steps;
     });
     
     return stepData;

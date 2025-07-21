@@ -15,37 +15,50 @@ const ACTIVITY_MODES = {
   }
 };
 
+// Helper to format a Date object as YYYY-MM-DD in local time
+function formatDateLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper to add days to a date (returns a new Date)
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 const ContributionGraph = ({ data }) => {
   const [activityMode, setActivityMode] = useState('active');
 
+  // Calculate the start date (previous Sunday, 1 year ago from today)
+  const today = new Date();
+  const oneYearAgo = addDays(today, -364); // 365 days including today
+  const startDay = oneYearAgo.getDay();
+  const startDate = addDays(oneYearAgo, -startDay); // Go back to previous Sunday
+
+  // Calculate the number of days to display (from startDate to today, inclusive)
+  const totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  const numWeeks = Math.ceil(totalDays / 7);
+
+  // Generate the weeks data
   const generateYearData = () => {
     const weeks = [];
-    const today = new Date();
-    const oneYearAgo = new Date(today);
-    oneYearAgo.setFullYear(today.getFullYear() - 1);
-    oneYearAgo.setDate(today.getDate() + 1);
-    
-    const startDate = new Date(oneYearAgo);
-    startDate.setDate(startDate.getDate() - startDate.getDay());
-    
     let currentDate = new Date(startDate);
-    
-    for (let week = 0; week < 53; week++) {
+    for (let week = 0; week < numWeeks; week++) {
       const weekData = [];
-      
       for (let day = 0; day < 7; day++) {
-        const dateString = currentDate.toISOString().split('T')[0];
+        const dateString = formatDateLocal(currentDate);
         const steps = data[dateString] || 0;
-        
-        // Calculate level based on selected mode's thresholds
         const thresholds = ACTIVITY_MODES[activityMode].thresholds;
-        let level = null; // null for no data (blank square)
-        
+        let level = null;
         if (steps > 0) {
           if (steps < 1000) {
-            level = 0; // 20% opacity for steps under 1000
+            level = 0;
           } else {
-            level = 0; // Default to level 0 (20% opacity)
+            level = 0;
             for (let i = thresholds.length - 1; i >= 0; i--) {
               if (steps >= thresholds[i]) {
                 level = i + 1;
@@ -54,7 +67,6 @@ const ContributionGraph = ({ data }) => {
             }
           }
         }
-        
         weekData.push({
           date: dateString,
           steps: steps,
@@ -62,26 +74,24 @@ const ContributionGraph = ({ data }) => {
           dayOfWeek: day,
           isCurrentMonth: currentDate <= today
         });
-        
-        currentDate.setDate(currentDate.getDate() + 1);
+        currentDate = addDays(currentDate, 1);
       }
-      
       weeks.push(weekData);
     }
-    
     return weeks;
   };
 
+  // Tooltip uses local time
   const getTooltipText = (date, steps) => {
-    const dateObj = new Date(date);
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    // Force local time by parsing as YYYY-MM-DDT00:00:00
+    const dateObj = new Date(date + 'T00:00:00');
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     };
     const formattedDate = dateObj.toLocaleDateString('en-US', options);
-    
     if (steps === 0) {
       return `No steps recorded on ${formattedDate}`;
     } else {
@@ -108,7 +118,6 @@ const ContributionGraph = ({ data }) => {
           })}
         </div>
       </div>
-      
       <div className="contribution-main">
         <div className="contribution-days">
           {dayLabels.map((day, index) => (
@@ -117,7 +126,6 @@ const ContributionGraph = ({ data }) => {
             </div>
           ))}
         </div>
-        
         <div className="contribution-weeks">
           {weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="contribution-week">
@@ -136,7 +144,6 @@ const ContributionGraph = ({ data }) => {
           ))}
         </div>
       </div>
-
       <div className="contribution-footer">
         <div className="contribution-legend">
           <span>Less</span>
@@ -164,7 +171,6 @@ const ContributionGraph = ({ data }) => {
           </div>
           <span>More</span>
         </div>
-
         <div className="mode-selector">
           {Object.entries(ACTIVITY_MODES).map(([mode, { name }]) => (
             <button
