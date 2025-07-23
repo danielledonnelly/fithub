@@ -25,6 +25,10 @@ class UserModel {
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
     
+    // Model should only do line 30-34 - rest is business logic that belongs in service 
+    // Hashing goes beyond the scope of model, belongs in service. application is a collection of services put together
+    // Keep model as just database code
+
     // Insert user into database
     const [result] = await pool.query(
       'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
@@ -107,6 +111,7 @@ class UserModel {
   // Validate password (internal method)
   static async validatePassword(user, password) {
     const [rows] = await pool.query(
+      // this belongs
       'SELECT password FROM users WHERE id = ?',
       [user.id]
     );
@@ -114,6 +119,7 @@ class UserModel {
     if (rows.length === 0) return false;
     
     // Compare provided password with stored hash
+    // this does not belong in user, belongs in service
     return bcrypt.compare(password, rows[0].password);
   }
 }

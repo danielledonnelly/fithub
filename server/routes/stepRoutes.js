@@ -1,10 +1,13 @@
 const express = require('express');
-const router = express.Router();
+const router = express.Router(); // this creates a nested router 
 const StepService = require('../services/StepService');
 const { authenticateToken } = require('../middleware/auth');
+router.use(authenticateToken);
 
 // Get all step data with optional date filtering
-router.get('/', authenticateToken, async (req, res) => {
+// The bodies for each function can live as controller - controller class can be called with request and response
+// All this has to do is route from a path to a controller  - stepController.getSteps
+router.get('/',  async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const userId = req.user.sub;
@@ -16,7 +19,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Get step data for a specific date
-router.get('/:date', authenticateToken, async (req, res) => {
+router.get('/:date',  async (req, res) => {
   try {
     const { date } = req.params;
     const userId = req.user.sub;
@@ -28,7 +31,7 @@ router.get('/:date', authenticateToken, async (req, res) => {
 });
 
 // Update step data for a specific date
-router.put('/:date', authenticateToken, async (req, res) => {
+router.put('/:date',  async (req, res) => {
   try {
     const { date } = req.params;
     const { steps } = req.body;
@@ -44,7 +47,7 @@ router.put('/:date', authenticateToken, async (req, res) => {
 });
 
 // Delete step data for a specific date
-router.delete('/:date', authenticateToken, async (req, res) => {
+router.delete('/:date',  async (req, res) => {
   try {
     const { date } = req.params;
     const userId = req.user.sub;
@@ -61,7 +64,7 @@ router.delete('/:date', authenticateToken, async (req, res) => {
 });
 
 // Get step statistics with optional date filtering
-router.get('/stats/summary', authenticateToken, async (req, res) => {
+router.get('/stats/summary',  async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const userId = req.user.sub;
@@ -73,7 +76,7 @@ router.get('/stats/summary', authenticateToken, async (req, res) => {
 });
 
 // Regenerate sample data (for development)
-router.post('/regenerate', authenticateToken, async (req, res) => {
+router.post('/regenerate',  async (req, res) => {
   try {
     const userId = req.user.sub;
     const totalDays = await StepService.regenerateData(userId);

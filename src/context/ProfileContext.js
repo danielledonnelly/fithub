@@ -10,11 +10,13 @@ export const useProfile = () => {
   return context;
 };
 
+// Avoid ProfileProivder to follow React best practice and keep components reusable
+// Passing down through props is more powerful -- do not attach to context, avoid having too many users of a context as it becomes hard to refactor
 export const ProfileProvider = ({ children }) => {
   const [profile, setProfile] = useState({
-    name: 'DANI',
-    bio: 'LOCK IN LOCK IN LOCK IN',
-    avatar: 'D',
+    name: '',
+    bio: '',
+    avatar: '',
     monthsActive: 12,
     fitnessScore: 85
   });

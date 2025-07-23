@@ -183,6 +183,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const updates = result.data;
 
     // Profile operations are NOW just data CRUD, not authentication business logic
+     // Don't call models from controller - don't have model and controller interact - 
     const updatedUser = await UserModel.updateUser(req.user.sub, updates);
 
     res.json({
