@@ -10,6 +10,20 @@ router.use(authenticateToken);
 // All this has to do is route from a path to a controller  - stepController.getSteps
 router.get('/', StepController.getAllSteps);
 
+// Get step statistics with optional date filtering
+router.get('/stats/summary', StepController.getStepStats);
+
+// Test route to see if the controller is working
+router.get('/test', (req, res) => {
+  res.json({ message: 'StepController is working' });
+});
+
+// Regenerate sample data (for development)
+router.post('/regenerate', StepController.regenerateData);
+
+// Upload screenshot for step extraction
+router.post('/upload-screenshot', upload.single('screenshot'), StepController.uploadScreenshot);
+
 // Get step data for a specific date
 router.get('/:date', StepController.getStepsByDate);
 
@@ -18,15 +32,5 @@ router.put('/:date', StepController.updateSteps);
 
 // Delete step data for a specific date
 router.delete('/:date', StepController.deleteSteps);
-
-// Get step statistics with optional date filtering
-router.get('/stats/summary', StepController.getStepStats);
-
-// Regenerate sample data (for development)
-router.post('/regenerate', StepController.regenerateData);
-
-
-// Upload screenshot for step extraction
-router.post('/upload-screenshot', upload.single('screenshot'), StepController.uploadScreenshot);
 
 module.exports = router;

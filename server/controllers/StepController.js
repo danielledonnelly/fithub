@@ -91,45 +91,48 @@ class StepController {
     }
   }
 
-    // Regenerate sample data (for development)
-    static async regenerateData(req, res) {
-      try {
-        const userId = req.user.sub;
-        
-        const totalDays = await StepService.regenerateData(userId);
-        res.json({ 
-          message: 'Step data regenerated successfully',
-          totalDays
-        });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
+  // Upload screenshot for step extraction
+  static async uploadScreenshot(req, res) {
+    try {
+      console.log('Upload request received:', req.file);
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'No image file uploaded' });
       }
+
+      const userId = req.user.sub;
+      const imagePath = req.file.path;
+      
+      console.log('File uploaded to:', imagePath);
+      
+      // For now, let's just add a fixed number of steps for testing
+      const today = new Date().toISOString().split('T')[0];
+      const testSteps = 8500; // Test with 8500 steps
+      
+      console.log('Updating steps for user:', userId, 'date:', today, 'steps:', testSteps);
+      
+      // Update steps in database
+      const result = await StepService.updateSteps(userId, today, testSteps);
+      
+      console.log('Steps updated:', result);
+      
+      res.json({
+        message: 'Screenshot uploaded and steps updated successfully',
+        steps: testSteps,
+        date: today,
+        filePath: imagePath
+      });
+    } catch (error) {
+      console.error('Screenshot upload error:', error);
+      res.status(400).json({
+        error: 'Failed to upload screenshot',
+        message: error.message
+      });
     }
-  
-    // Upload screenshot for step extraction  ← ADD THIS METHOD HERE
-    static async uploadScreenshot(req, res) {
-      try {
-        if (!req.file) {
-          return res.status(400).json({ error: 'No image file uploaded' });
-        }
-  
-        const userId = req.user.sub;
-        const imagePath = req.file.path;
-        
-        // For now, let's just return success without OCR
-        // We'll implement the actual OCR later
-        res.json({
-          message: 'Screenshot uploaded successfully',
-          filePath: imagePath
-        });
-      } catch (error) {
-        console.error('Screenshot upload error:', error);
-        res.status(400).json({
-          error: 'Failed to upload screenshot',
-          message: error.message
-        });
-      }
-    }
+  }
 }
+
+console.log('StepController methods:', Object.getOwnPropertyNames(StepController));
+console.log('uploadScreenshot method exists:', typeof StepController.uploadScreenshot);
 
 module.exports = StepController;
