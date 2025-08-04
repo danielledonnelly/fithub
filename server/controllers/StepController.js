@@ -105,20 +105,27 @@ class StepController {
       
       console.log('File uploaded to:', imagePath);
       
-      // For now, let's just add a fixed number of steps for testing
-      const today = new Date().toISOString().split('T')[0];
-      const testSteps = 8500; // Test with 8500 steps
+      // Import the StepParsingService
+      const StepParsingService = require('../services/StepParsingService');
       
-      console.log('Updating steps for user:', userId, 'date:', today, 'steps:', testSteps);
+      // Extract step count from the image using OCR
+      console.log('Processing image with OCR...');
+      const extractedSteps = await StepParsingService.extractStepsFromImage(imagePath);
+      
+      console.log('Extracted steps:', extractedSteps);
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      console.log('Updating steps for user:', userId, 'date:', today, 'steps:', extractedSteps);
       
       // Update steps in database
-      const result = await StepService.updateSteps(userId, today, testSteps);
+      const result = await StepService.updateSteps(userId, today, extractedSteps);
       
       console.log('Steps updated:', result);
       
       res.json({
         message: 'Screenshot uploaded and steps updated successfully',
-        steps: testSteps,
+        steps: extractedSteps,
         date: today,
         filePath: imagePath
       });

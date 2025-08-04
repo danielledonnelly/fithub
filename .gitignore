@@ -36,3 +36,6 @@ server/test-db.js
 server/test-env.js
 server/test-hash.js
 server/test-login.js
+
+# User uploads
+server/uploads/
