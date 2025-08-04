@@ -1,4 +1,3 @@
-// server/services/AuthService.js
 // Handles all authentication business logic including login, register, token validation, and refresh
 // Separates authentication logic from data operations (UserModel) and HTTP handling (routes)
 const UserModel = require('../models/User');
@@ -126,6 +125,32 @@ class AuthService {
       throw new Error('Invalid refresh token');
     }
   }
+
+  // Get user profile
+static async getProfile(userId) {
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  return {
+    name: user.display_name || user.username,
+    bio: user.bio || '',
+    avatar: user.avatar || ''
+  };
+}
+
+  // Update user profile
+  static async updateProfile(userId, updates) {
+  const updatedUser = await UserModel.updateUser(userId, updates);
+  
+  return {
+    name: updatedUser.display_name || updatedUser.username,
+    bio: updatedUser.bio || '',
+    avatar: updatedUser.avatar || ''
+  };
+}
+
 }
 
 module.exports = AuthService;

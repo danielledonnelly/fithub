@@ -4,6 +4,7 @@ import Profile from '../components/Profile';
 import StepService from '../services/StepService';
 import ProfileService from '../services/ProfileService';
 import LogStepsForm from '../components/LogStepsForm';
+import ScreenshotUpload from '../components/ScreenshotUpload';
 // import dummySteps from '../data/dummySteps';
 
 const Dashboard = () => {
@@ -183,6 +184,7 @@ const Dashboard = () => {
             </div>
             <div className="current-streak">
   <LogStepsForm onSuccess={() => window.location.reload()} />
+  <ScreenshotUpload onSuccess={() => window.location.reload()} />
 </div>
             
           </div>
