@@ -29,24 +29,27 @@ class UserModel {
     // Hashing goes beyond the scope of model, belongs in service. application is a collection of services put together
     // Keep model as just database code
 
-    // Insert user into database
+    // Insert user into database with profile fields
     const [result] = await pool.query(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-      [username, email.toLowerCase(), hashedPassword]
+      'INSERT INTO users (username, email, password, display_name, bio, avatar) VALUES (?, ?, ?, ?, ?, ?)',
+      [username, email.toLowerCase(), hashedPassword, username, '', '']
     );
     
     // Return user without password
     return {
       id: result.insertId,
       username,
-      email: email.toLowerCase()
+      email: email.toLowerCase(),
+      display_name: username,
+      bio: '',
+      avatar: ''
     };
   }
 
   // Get user by ID
   static async findById(id) {
     const [rows] = await pool.query(
-      'SELECT id, username, email FROM users WHERE id = ?',
+      'SELECT id, username, email, display_name, bio, avatar FROM users WHERE id = ?',
       [id]
     );
     return rows[0] || null;
@@ -55,7 +58,7 @@ class UserModel {
   // Get user by email
   static async findByEmail(email) {
     const [rows] = await pool.query(
-      'SELECT id, username, email FROM users WHERE email = ?',
+      'SELECT id, username, email, display_name, bio, avatar FROM users WHERE email = ?',
       [email.toLowerCase()]
     );
     return rows[0] || null;
@@ -74,6 +77,18 @@ class UserModel {
     if (updates.email) {
       fields.push('email = ?');
       values.push(updates.email.toLowerCase());
+    }
+    if (updates.display_name !== undefined) {
+      fields.push('display_name = ?');
+      values.push(updates.display_name);
+    }
+    if (updates.bio !== undefined) {
+      fields.push('bio = ?');
+      values.push(updates.bio);
+    }
+    if (updates.avatar !== undefined) {
+      fields.push('avatar = ?');
+      values.push(updates.avatar);
     }
     
     if (fields.length === 0) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ContributionGraph from '../components/ContributionGraph';
 import Profile from '../components/Profile';
 import StepService from '../services/StepService';
+import ProfileService from '../services/ProfileService';
 import LogStepsForm from '../components/LogStepsForm';
 // import dummySteps from '../data/dummySteps';
 
@@ -9,6 +10,32 @@ const Dashboard = () => {
   const [stepData, setStepData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profile, setProfile] = useState({
+    name: '',
+    bio: '',
+    avatar: ''
+  });
+
+  // Load profile from database
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profileData = await ProfileService.getProfile();
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Fallback to empty profile with username from auth
+        const user = JSON.parse(localStorage.getItem('fithub_user') || '{}');
+        setProfile({
+          name: user.username || '',
+          bio: '',
+          avatar: ''
+        });
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   // Load data from backend API
   useEffect(() => {
@@ -134,8 +161,10 @@ const Dashboard = () => {
         )}
 
         <Profile 
+          profile={profile}
           totalWorkouts={calculateActiveDays()}
           currentStreak={0}
+          totalSteps={calculateTotalSteps()}
         />
         
         <div className="contribution-section">

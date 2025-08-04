@@ -1,40 +1,74 @@
-import React, { useState } from 'react';
-import { useProfile } from '../context/ProfileContext';
+import React, { useState, useEffect } from 'react';
+import ProfileService from '../services/ProfileService';
 
 const ProfilePage = () => {
-  const { profile, updateProfile } = useProfile();
+  const [profile, setProfile] = useState({
+    name: '',
+    bio: '',
+    avatar: ''
+  });
   const [formData, setFormData] = useState({
-    name: profile.name,
-    bio: profile.bio,
-    avatar: profile.avatar,
-    monthsActive: profile.monthsActive,
-    fitnessScore: profile.fitnessScore
+    name: '',
+    bio: '',
+    avatar: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Load profile from database
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const profileData = await ProfileService.getProfile();
+        setProfile(profileData);
+        setFormData(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Fallback to empty profile
+        const emptyProfile = {
+          name: '',
+          bio: '',
+          avatar: ''
+        };
+        setProfile(emptyProfile);
+        setFormData(emptyProfile);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'monthsActive' || name === 'fitnessScore' ? parseInt(value) || 0 : value
+      [name]: value
     }));
   };
 
-  const handleSave = () => {
-    updateProfile(formData);
-    setIsEditing(false);
-    setSaveMessage('Profile updated successfully!');
-    setTimeout(() => setSaveMessage(''), 3000);
+  const handleSave = async () => {
+    try {
+      const updatedProfile = await ProfileService.updateProfile(formData);
+      setProfile(updatedProfile);
+      setIsEditing(false);
+      setSaveMessage('Profile updated successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setSaveMessage('Failed to update profile. Please try again.');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
   };
 
   const handleCancel = () => {
     setFormData({
       name: profile.name,
       bio: profile.bio,
-      avatar: profile.avatar,
-      monthsActive: profile.monthsActive,
-      fitnessScore: profile.fitnessScore
+      avatar: profile.avatar
     });
     setIsEditing(false);
   };
@@ -220,93 +254,6 @@ const ProfilePage = () => {
                   {profile.avatar}
                 </div>
               )}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#f0f6fc' 
-                }}>
-                  Months Active
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    name="monthsActive"
-                    value={formData.monthsActive}
-                    onChange={handleInputChange}
-                    min="0"
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      backgroundColor: '#0d1117',
-                      border: '1px solid #30363d',
-                      borderRadius: '6px',
-                      color: '#c9d1d9',
-                      outline: 'none'
-                    }}
-                  />
-                ) : (
-                  <div style={{ 
-                    padding: '8px 12px', 
-                    fontSize: '14px', 
-                    color: '#c9d1d9',
-                    backgroundColor: '#161b22',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px'
-                  }}>
-                    {profile.monthsActive}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#f0f6fc' 
-                }}>
-                  Fitness Score
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    name="fitnessScore"
-                    value={formData.fitnessScore}
-                    onChange={handleInputChange}
-                    min="0"
-                    max="100"
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      backgroundColor: '#0d1117',
-                      border: '1px solid #30363d',
-                      borderRadius: '6px',
-                      color: '#c9d1d9',
-                      outline: 'none'
-                    }}
-                  />
-                ) : (
-                  <div style={{ 
-                    padding: '8px 12px', 
-                    fontSize: '14px', 
-                    color: '#c9d1d9',
-                    backgroundColor: '#161b22',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px'
-                  }}>
-                    {profile.fitnessScore}
-                  </div>
-                )}
-              </div>
             </div>
 
             {isEditing && (

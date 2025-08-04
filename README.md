@@ -4,14 +4,6 @@
 
 A GitHub-inspired app that measures your fitness by tracking the number of steps you take each day
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com)
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-
-
-</div>
-## Features
-
 ✦ **GitHub-Style Interface** - Familiar dark theme and layout inspired by GitHub  
 
 ✦ **Contribution Squares** - Visual representation of your year-long fitness journey  
@@ -68,26 +60,18 @@ These wil be addressed once we add express-session
 
 ## Usage
 
-### Tracking Workouts
-✦ **Click on any square** to cycle through workout intensities:
-  ✦ **Gray**: No workout
-  ✦ **Light Green**: Light workout
-  ✦ **Medium Green**: Moderate workout
-  ✦ **Dark Green**: Good workout
-  ✦ **Bright Green**: Intense workout
-
-### Viewing Stats
-✦ **Total Workouts**: See your cumulative workout count
-✦ **Current Streak**: Track consecutive workout days
-✦ **Fitness Score**: Overall fitness rating
-✦ **Activity Graph**: Year-long visual representation
-
 ## Available Scripts
 
 In the project directory, you can run:
 
 ### `npm start`
 Runs the app in development mode. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+### `cd server npm start`
+Starts the server on port 5001 by default.
+✦ Health check: http://localhost:5001/api/health
+✦ Auth endpoints: http://localhost:5001/api/auth
+✦ Steps endpoint: http://localhost:5001/api/steps
 
 ### `npm test`
 Launches the test runner in interactive watch mode.
@@ -168,3 +152,4 @@ fithub/
 
 Inspired by GitHub's contribution graph, FitHub brings the same satisfying visual progress tracking to your fitness journey. 
 
+</div>

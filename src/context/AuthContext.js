@@ -120,6 +120,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       saveAuth(data);
+      
       return { success: true, user: data.user };
     } catch (error) {
       setError(error.message);

@@ -143,8 +143,7 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-// Make route handler async so we can await the UserModel.findById call
-// Without async, we can't use await inside the function
+// Get user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const user = await UserModel.findById(req.user.sub);
@@ -155,9 +154,15 @@ router.get('/profile', authenticateToken, async (req, res) => {
       });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    // Return profile data
+    const profile = {
+      name: user.display_name || user.username,
+      bio: user.bio || '',
+      avatar: user.avatar || ''
+    };
+
     res.json({
-      user: userWithoutPassword
+      profile
     });
   } catch (error) {
     console.error('Profile fetch error:', error);
@@ -171,24 +176,46 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // Update user profile
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
-    const result = profileUpdateSchema.safeParse(req.body);
+    const { name, bio, avatar } = req.body;
     
-    if (!result.success) {
+    // Validate input
+    if (name && typeof name !== 'string') {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: result.error.errors
+        error: 'Invalid name format'
+      });
+    }
+    
+    if (bio && typeof bio !== 'string') {
+      return res.status(400).json({
+        error: 'Invalid bio format'
+      });
+    }
+    
+    if (avatar && typeof avatar !== 'string') {
+      return res.status(400).json({
+        error: 'Invalid avatar format'
       });
     }
 
-    const updates = result.data;
+    // Prepare updates
+    const updates = {};
+    if (name !== undefined) updates.display_name = name;
+    if (bio !== undefined) updates.bio = bio;
+    if (avatar !== undefined) updates.avatar = avatar;
 
-    // Profile operations are NOW just data CRUD, not authentication business logic
-     // Don't call models from controller - don't have model and controller interact - 
+    // Update user in database
     const updatedUser = await UserModel.updateUser(req.user.sub, updates);
+
+    // Return updated profile
+    const profile = {
+      name: updatedUser.display_name || updatedUser.username,
+      bio: updatedUser.bio || '',
+      avatar: updatedUser.avatar || ''
+    };
 
     res.json({
       message: 'Profile updated successfully',
-      user: updatedUser
+      profile
     });
   } catch (error) {
     console.error('Profile update error:', error);
