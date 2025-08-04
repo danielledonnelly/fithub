@@ -162,8 +162,8 @@ const Progress = () => {
                     fontSize: '12px',
                     fontWeight: '500',
                     color: '#ffffff',
-                    backgroundColor: '#238636',
-                    border: '1px solid #2ea043',
+                    backgroundColor: '#BB1F21',
+                    border: '1px solid #BB1F21',
                     borderRadius: '6px',
                     cursor: 'pointer'
                   }}

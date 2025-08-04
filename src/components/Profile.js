@@ -1,6 +1,8 @@
 import React from 'react';
+import LogStepsForm from './LogStepsForm';
+import ScreenshotUpload from './ScreenshotUpload';
 
-const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps }) => {
+const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess }) => {
   // Provide fallbacks for profile data
   const safeProfile = {
     name: profile?.name || '',
@@ -39,6 +41,42 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps }) => {
             <div className="stat-label">Fitness Score</div>
           </div>
           */}
+        </div>
+      </div>
+      
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'row', 
+        gap: '12px',
+        minWidth: '400px',
+        maxWidth: '500px'
+      }}>
+        <div style={{
+          backgroundColor: '#161b22',
+          border: '1px solid #30363d',
+          borderRadius: '6px',
+          padding: '12px',
+          flex: '1'
+        }}>
+          <h3 style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#f0f6fc',
+            margin: '0 0 8px 0'
+          }}>
+            Log Steps
+          </h3>
+          <LogStepsForm onSuccess={onSuccess} />
+        </div>
+        
+        <div style={{
+          backgroundColor: '#161b22',
+          border: '1px solid #30363d',
+          borderRadius: '6px',
+          padding: '12px',
+          flex: '1'
+        }}>
+          <ScreenshotUpload onSuccess={onSuccess} />
         </div>
       </div>
     </div>

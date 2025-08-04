@@ -166,28 +166,23 @@ const Dashboard = () => {
           totalWorkouts={calculateActiveDays()}
           currentStreak={0}
           totalSteps={calculateTotalSteps()}
+          onSuccess={() => window.location.reload()}
         />
         
         <div className="contribution-section">
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ 
+            marginBottom: '12px',
+            maxWidth: '100%'
+          }}>
             <h2 className="contribution-title" style={{ margin: 0 }}>Step Activity</h2>
           </div>
-          <p className="contribution-subtitle">
+          <p className="contribution-subtitle" style={{ maxWidth: '100%' }}>
             {calculateActiveDays()} active days in the last year
           </p>
           
-          <div className="contribution-content">
-            <div className="contribution-graph-container">
-              <ContributionGraph 
-                data={stepData}
-              />
-            </div>
-            <div className="current-streak">
-  <LogStepsForm onSuccess={() => window.location.reload()} />
-  <ScreenshotUpload onSuccess={() => window.location.reload()} />
-</div>
-            
-          </div>
+          <ContributionGraph 
+            data={stepData}
+          />
         </div>
       </div>
     </div>

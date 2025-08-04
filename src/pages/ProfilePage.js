@@ -84,8 +84,8 @@ const ProfilePage = () => {
         {saveMessage && (
           <div style={{
             padding: '12px 16px',
-            backgroundColor: '#238636',
-            border: '1px solid #2ea043',
+            backgroundColor: '#BB1F21',
+            border: '1px solid #BB1F21',
             borderRadius: '6px',
             color: '#ffffff',
             marginBottom: '20px',
@@ -106,17 +106,19 @@ const ProfilePage = () => {
                   fontSize: '14px',
                   fontWeight: '500',
                   color: '#ffffff',
-                  backgroundColor: '#238636',
-                  border: '1px solid #2ea043',
+                  backgroundColor: '#BB1F21',
+                  border: '1px solid #BB1F21',
                   borderRadius: '6px',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#2ea043';
+                  e.target.style.backgroundColor = '#921E21';
+                  e.target.style.borderColor = '#921E21';
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#238636';
+                  e.target.style.backgroundColor = '#BB1F21';
+                  e.target.style.borderColor = '#BB1F21';
                 }}
               >
                 Edit Profile
@@ -265,17 +267,19 @@ const ProfilePage = () => {
                     fontSize: '14px',
                     fontWeight: '500',
                     color: '#ffffff',
-                    backgroundColor: '#238636',
-                    border: '1px solid #2ea043',
+                    backgroundColor: '#BB1F21',
+                    border: '1px solid #BB1F21',
                     borderRadius: '6px',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                   onMouseOver={(e) => {
-                    e.target.style.backgroundColor = '#2ea043';
+                    e.target.style.backgroundColor = '#921E21';
+                    e.target.style.borderColor = '#921E21';
                   }}
                   onMouseOut={(e) => {
-                    e.target.style.backgroundColor = '#238636';
+                    e.target.style.backgroundColor = '#BB1F21';
+                    e.target.style.borderColor = '#BB1F21';
                   }}
                 >
                   Save Changes

@@ -109,7 +109,7 @@ const ContributionGraph = ({ data }) => {
         <div className="month-labels">
           {Array.from({ length: 12 }, (_, i) => {
             const date = new Date();
-            date.setMonth(date.getMonth() - 11 + i);
+            date.setMonth(date.getMonth() - 12 + i);
             return (
               <div key={i} className="month-label">
                 {date.toLocaleDateString('en-US', { month: 'short' })}
