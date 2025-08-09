@@ -151,6 +151,11 @@ static async getProfile(userId) {
   };
 }
 
+static async deleteUser(userId) {
+  const deletedUser = await UserModel.deleteUser(userId);
+  return deletedUser;
+}
+
 }
 
 module.exports = AuthService;

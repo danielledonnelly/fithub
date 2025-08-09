@@ -1,14 +1,5 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
-
-// Use the same connection pool as User model
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'fithub',
-  dateStrings: true // Ensures DATE columns are returned as strings
-});
+const {pool} = require('../db');
 
 class StepModel {
   // Get all steps for a user with optional date filtering

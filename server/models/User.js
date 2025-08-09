@@ -1,16 +1,8 @@
-// server/models/User.js
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+const {pool} = require('../db');
 
-// Create MySQL connection pool
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'fithub'
-});
-
+// 
 class UserModel {
   // Create user
   static async createUser(userData) {
