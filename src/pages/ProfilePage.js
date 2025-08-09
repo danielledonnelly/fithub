@@ -127,45 +127,94 @@ const ProfilePage = () => {
           </div>
 
           <div style={{ display: 'grid', gap: '20px', maxWidth: '500px' }}>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#f0f6fc' 
-              }}>
-                Display Name
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none'
-                  }}
-                />
-              ) : (
-                <div style={{ 
-                  padding: '8px 12px', 
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
                   fontSize: '14px', 
-                  color: '#c9d1d9',
-                  backgroundColor: '#161b22',
-                  border: '1px solid #30363d',
-                  borderRadius: '6px'
+                  fontWeight: '500', 
+                  color: '#f0f6fc' 
                 }}>
-                  {profile.name}
-                </div>
-              )}
+                  Avatar
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="avatar"
+                    value={formData.avatar}
+                    onChange={handleInputChange}
+                    maxLength="1"
+                    style={{
+                      width: '60px',
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      backgroundColor: '#0d1117',
+                      border: '1px solid #30363d',
+                      borderRadius: '6px',
+                      color: '#c9d1d9',
+                      outline: 'none',
+                      textAlign: 'center'
+                    }}
+                  />
+                ) : (
+                  <div style={{ 
+                    width: '60px',
+                    height: '60px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    color: '#7d8590',
+                    backgroundColor: '#30363d',
+                    border: '1px solid #30363d',
+                    borderRadius: '50%'
+                  }}>
+                    {profile.avatar}
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ flex: '1' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#f0f6fc' 
+                }}>
+                  Display Name
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      backgroundColor: '#0d1117',
+                      border: '1px solid #30363d',
+                      borderRadius: '6px',
+                      color: '#c9d1d9',
+                      outline: 'none'
+                    }}
+                  />
+                ) : (
+                  <div style={{ 
+                    padding: '8px 12px', 
+                    fontSize: '14px', 
+                    color: '#c9d1d9',
+                    backgroundColor: '#161b22',
+                    border: '1px solid #30363d',
+                    borderRadius: '6px'
+                  }}>
+                    {profile.name}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -211,52 +260,7 @@ const ProfilePage = () => {
               )}
             </div>
 
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#f0f6fc' 
-              }}>
-                Avatar (Single Character)
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="avatar"
-                  value={formData.avatar}
-                  onChange={handleInputChange}
-                  maxLength="1"
-                  style={{
-                    width: '60px',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none',
-                    textAlign: 'center'
-                  }}
-                />
-              ) : (
-                <div style={{ 
-                  width: '60px',
-                  height: '60px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                  color: '#7d8590',
-                  backgroundColor: '#30363d',
-                  border: '1px solid #30363d',
-                  borderRadius: '50%'
-                }}>
-                  {profile.avatar}
-                </div>
-              )}
-            </div>
+
 
             {isEditing && (
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>

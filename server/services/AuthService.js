@@ -127,7 +127,7 @@ class AuthService {
   }
 
   // Get user profile
-static async getProfile(userId) {
+  static async getProfile(userId) {
   const user = await UserModel.findById(userId);
   if (!user) {
     throw new Error('User not found');
@@ -142,7 +142,16 @@ static async getProfile(userId) {
 
   // Update user profile
   static async updateProfile(userId, updates) {
-  const updatedUser = await UserModel.updateUser(userId, updates);
+  // Map frontend 'name' field to database 'display_name' field
+  const mappedUpdates = {
+    ...updates,
+    display_name: updates.name !== undefined ? updates.name : undefined
+  };
+  
+  // Remove the 'name' field since we've mapped it to 'display_name'
+  delete mappedUpdates.name;
+  
+  const updatedUser = await UserModel.updateUser(userId, mappedUpdates);
   
   return {
     name: updatedUser.display_name || updatedUser.username,
@@ -151,7 +160,7 @@ static async getProfile(userId) {
   };
 }
 
-static async deleteUser(userId) {
+  static async deleteUser(userId) {
   const deletedUser = await UserModel.deleteUser(userId);
   return deletedUser;
 }
