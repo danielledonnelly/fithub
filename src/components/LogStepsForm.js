@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import StepService from '../services/StepService';
 
 const LogStepsForm = ({ onSuccess }) => {
-  const [date, setDate] = useState('');
+  // Get today's date in YYYY-MM-DD format for the default value
+  const today = new Date().toISOString().split('T')[0];
+  
+  const [date, setDate] = useState(today);
   const [steps, setSteps] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -46,7 +49,8 @@ const LogStepsForm = ({ onSuccess }) => {
               borderRadius: '4px',
               color: '#8b949e',
               fontSize: '11px',
-              width: '100%'
+              width: '100%',
+              colorScheme: 'dark'
             }}
           />
         </div>

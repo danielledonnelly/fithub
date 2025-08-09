@@ -33,6 +33,26 @@ function addDays(date, days) {
 const ContributionGraph = ({ data }) => {
   const [activityMode, setActivityMode] = useState('active');
 
+  // Convert data keys from Date objects to YYYY-MM-DD format
+  const normalizedData = {};
+  if (data && typeof data === 'object') {
+    Object.keys(data).forEach(key => {
+      try {
+        // Parse the date key and convert to YYYY-MM-DD format
+        const date = new Date(key);
+        if (!isNaN(date.getTime())) {
+          const dateString = date.toISOString().split('T')[0];
+          normalizedData[dateString] = data[key];
+        }
+      } catch (e) {
+        // If key is already in YYYY-MM-DD format, use it as is
+        if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          normalizedData[key] = data[key];
+        }
+      }
+    });
+  }
+
   // Calculate the start date (previous Sunday, 1 year ago from today)
   const today = new Date();
   const oneYearAgo = addDays(today, -364); // 365 days including today
@@ -51,7 +71,7 @@ const ContributionGraph = ({ data }) => {
       const weekData = [];
       for (let day = 0; day < 7; day++) {
         const dateString = formatDateLocal(currentDate);
-        const steps = data[dateString] || 0;
+        const steps = normalizedData[dateString] || 0;
         const thresholds = ACTIVITY_MODES[activityMode].thresholds;
         let level = null;
         if (steps > 0) {
