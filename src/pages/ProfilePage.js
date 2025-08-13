@@ -15,6 +15,12 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [googleFitStatus, setGoogleFitStatus] = useState({
+    connected: false,
+    connectedAt: null,
+    lastSync: null
+  });
+  const [googleFitLoading, setGoogleFitLoading] = useState(false);
 
   // Load profile from database
   useEffect(() => {
@@ -41,6 +47,30 @@ const ProfilePage = () => {
 
     loadProfile();
   }, []);
+
+    // Load Google Fit connection status
+    useEffect(() => {
+      const loadGoogleFitStatus = async () => {
+        try {
+          const token = localStorage.getItem('fithub_token');
+          if (token) {
+            const response = await fetch('http://localhost:5001/api/google-fit/status', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (response.ok) {
+              const status = await response.json();
+              setGoogleFitStatus(status);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading Google Fit status:', error);
+        }
+      };
+  
+      loadGoogleFitStatus();
+    }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -71,6 +101,29 @@ const ProfilePage = () => {
       avatar: profile.avatar
     });
     setIsEditing(false);
+  };
+
+  // Handle Google Fit connection
+  const handleConnectGoogleFit = async () => {
+    try {
+      setGoogleFitLoading(true);
+      const token = localStorage.getItem('fithub_token');
+      const response = await fetch('http://localhost:5001/api/google-fit/auth-url', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Open Google OAuth in new window
+        window.open(data.authUrl, '_blank', 'width=500,height=600');
+      }
+    } catch (error) {
+      console.error('Error getting Google Fit auth URL:', error);
+    } finally {
+      setGoogleFitLoading(false);
+    }
   };
 
   return (
@@ -312,6 +365,66 @@ const ProfilePage = () => {
                 >
                   Cancel
                 </button>
+              </div>
+            )}
+
+            
+          </div>
+        </div>
+
+        {/* Google Fit Integration Section */}
+        <div className="contribution-section" style={{ marginTop: '20px' }}>
+          <h2 className="contribution-title">Google Fit Integration</h2>
+          <p className="contribution-subtitle">
+            Connect your Google Fit account to automatically sync your step data
+          </p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
+            <div style={{ 
+              padding: '12px 16px', 
+              backgroundColor: googleFitStatus.connected ? '#28a745' : '#6c757d',
+              color: '#ffffff',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              {googleFitStatus.connected ? 'Connected' : 'Not Connected'}
+            </div>
+            
+            {!googleFitStatus.connected ? (
+              <button
+                onClick={handleConnectGoogleFit}
+                disabled={googleFitLoading}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#ffffff',
+                  backgroundColor: '#007bff',
+                  border: '1px solid #007bff',
+                  borderRadius: '6px',
+                  cursor: googleFitLoading ? 'not-allowed' : 'pointer',
+                  opacity: googleFitLoading ? 0.6 : 1,
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  if (!googleFitLoading) {
+                    e.target.style.backgroundColor = '#0056b3';
+                    e.target.style.borderColor = '#0056b3';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!googleFitLoading) {
+                    e.target.style.backgroundColor = '#007bff';
+                    e.target.style.borderColor = '#007bff';
+                  }
+                }}
+              >
+                {googleFitLoading ? 'Loading...' : 'Connect Google Fit'}
+              </button>
+            ) : (
+              <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                Connected since: {googleFitStatus.connectedAt ? new Date(googleFitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
               </div>
             )}
           </div>

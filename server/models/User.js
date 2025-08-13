@@ -83,6 +83,32 @@ class UserModel {
       values.push(updates.avatar);
     }
     
+    // Google Fit fields
+    if (updates.google_fit_access_token !== undefined) {
+      fields.push('google_fit_access_token = ?');
+      values.push(updates.google_fit_access_token);
+    }
+    if (updates.google_fit_refresh_token !== undefined) {
+      fields.push('google_fit_refresh_token = ?');
+      values.push(updates.google_fit_refresh_token);
+    }
+    if (updates.google_fit_token_expiry !== undefined) {
+      fields.push('google_fit_token_expiry = ?');
+      values.push(updates.google_fit_token_expiry);
+    }
+    if (updates.google_fit_connected !== undefined) {
+      fields.push('google_fit_connected = ?');
+      values.push(updates.google_fit_connected);
+    }
+    if (updates.google_fit_connected_at !== undefined) {
+      fields.push('google_fit_connected_at = ?');
+      values.push(updates.google_fit_connected_at);
+    }
+    if (updates.google_fit_last_sync !== undefined) {
+      fields.push('google_fit_last_sync = ?');
+      values.push(updates.google_fit_last_sync);
+    }
+    
     if (fields.length === 0) {
       throw new Error('No valid fields to update');
     }

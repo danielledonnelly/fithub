@@ -3,9 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 
+// Debug: Check if JWT secret is loaded
+console.log('JWT Secret loaded:', process.env.JWT_SECRET ? 'Yes' : 'No');
+console.log('JWT Secret length:', process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0);
+
 // Import routes
 const stepRoutes = require('./routes/stepRoutes');
 const authRoutes = require('./routes/authRoutes');
+const googleFitRoutes = require('./routes/googleFitRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -28,6 +33,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/steps', stepRoutes);
+app.use('/api/google-fit', googleFitRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -52,5 +58,6 @@ app.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
   console.log(`Steps endpoint: http://localhost:${PORT}/api/steps`);
+  console.log(`Google Fit endpoints: http://localhost:${PORT}/api/google-fit`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 
