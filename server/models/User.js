@@ -109,6 +109,32 @@ class UserModel {
       values.push(updates.google_fit_last_sync);
     }
     
+    // Fitbit fields
+    if (updates.fitbit_access_token !== undefined) {
+      fields.push('fitbit_access_token = ?');
+      values.push(updates.fitbit_access_token);
+    }
+    if (updates.fitbit_refresh_token !== undefined) {
+      fields.push('fitbit_refresh_token = ?');
+      values.push(updates.fitbit_refresh_token);
+    }
+    if (updates.fitbit_token_expiry !== undefined) {
+      fields.push('fitbit_token_expiry = ?');
+      values.push(updates.fitbit_token_expiry);
+    }
+    if (updates.fitbit_connected !== undefined) {
+      fields.push('fitbit_connected = ?');
+      values.push(updates.fitbit_connected);
+    }
+    if (updates.fitbit_connected_at !== undefined) {
+      fields.push('fitbit_connected_at = ?');
+      values.push(updates.fitbit_connected_at);
+    }
+    if (updates.fitbit_last_sync !== undefined) {
+      fields.push('fitbit_last_sync = ?');
+      values.push(updates.fitbit_last_sync);
+    }
+    
     if (fields.length === 0) {
       throw new Error('No valid fields to update');
     }

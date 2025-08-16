@@ -54,9 +54,22 @@ CREATE TABLE `users` (
   `display_name` varchar(255) DEFAULT NULL,
   `bio` text,
   `avatar` varchar(10) DEFAULT NULL,
+  `google_fit_access_token` text,
+  `google_fit_refresh_token` text,
+  `google_fit_token_expiry` bigint DEFAULT NULL,
+  `google_fit_connected` tinyint(1) DEFAULT '0',
+  `google_fit_connected_at` timestamp NULL DEFAULT NULL,
+  `google_fit_last_sync` timestamp NULL DEFAULT NULL,
+  `fitbit_access_token` text,
+  `fitbit_refresh_token` text,
+  `fitbit_token_expiry` timestamp NULL DEFAULT NULL,
+  `fitbit_connected` tinyint(1) DEFAULT '0',
+  `fitbit_connected_at` timestamp NULL DEFAULT NULL,
+  `fitbit_last_sync` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_users_fitbit_connected` (`fitbit_connected`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -81,5 +94,6 @@ CREATE TABLE `users` (
 
 LOCK TABLES `schema_migrations` WRITE;
 INSERT INTO `schema_migrations` (version) VALUES
-  ('20250808011340');
+  ('20250808011340'),
+  ('20250808030000');
 UNLOCK TABLES;

@@ -1,0 +1,126 @@
+const axios = require('axios');
+const querystring = require('querystring');
+
+class FitbitService {
+  constructor() {
+    this.clientId = process.env.FITBIT_CLIENT_ID;
+    this.clientSecret = process.env.FITBIT_CLIENT_SECRET;
+    this.redirectUri = process.env.FITBIT_REDIRECT_URI;
+    this.scopes = ['activity']; // Add more scopes if needed
+    this.tokenUrl = 'https://api.fitbit.com/oauth2/token';
+    this.apiBaseUrl = 'https://api.fitbit.com';
+    this.accessToken = null;
+    this.refreshToken = null;
+  }
+
+  // Generate OAuth URL for user to authorize
+  getAuthUrl(state) {
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: this.clientId,
+      redirect_uri: this.redirectUri,
+      scope: this.scopes.join(' '),
+      state
+    });
+    return `https://www.fitbit.com/oauth2/authorize?${params.toString()}`;
+  }
+
+  // Exchange authorization code for tokens
+  async getTokensFromCode(code) {
+    try {
+      const authHeader = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+
+      const { data } = await axios.post(
+        this.tokenUrl,
+        querystring.stringify({
+          client_id: this.clientId,
+          grant_type: 'authorization_code',
+          redirect_uri: this.redirectUri,
+          code
+        }),
+        {
+          headers: {
+            Authorization: `Basic ${authHeader}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+
+      this.accessToken = data.access_token;
+      this.refreshToken = data.refresh_token;
+      return data;
+    } catch (error) {
+      console.error('Error getting Fitbit tokens:', error.response?.data || error.message);
+      throw new Error('Failed to get access tokens');
+    }
+  }
+
+  // Set credentials for API calls
+  setCredentials(tokens) {
+    this.accessToken = tokens.access_token;
+    this.refreshToken = tokens.refresh_token;
+  }
+
+  // Fetch step data from Fitbit
+  async getStepData(date = new Date()) {
+    try {
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const { data } = await axios.get(
+        `${this.apiBaseUrl}/1/user/-/activities/date/${dateStr}.json`,
+        {
+          headers: { Authorization: `Bearer ${this.accessToken}` }
+        }
+      );
+      return {
+        date: dateStr,
+        steps: data.summary?.steps || 0
+      };
+    } catch (error) {
+      console.error('Error fetching Fitbit step data:', error.response?.data || error.message);
+      throw new Error('Failed to fetch step data from Fitbit');
+    }
+  }
+
+  // Refresh access token if expired
+  async refreshAccessToken() {
+    try {
+      const authHeader = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+
+      const { data } = await axios.post(
+        this.tokenUrl,
+        querystring.stringify({
+          grant_type: 'refresh_token',
+          refresh_token: this.refreshToken
+        }),
+        {
+          headers: {
+            Authorization: `Basic ${authHeader}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+
+      this.accessToken = data.access_token;
+      this.refreshToken = data.refresh_token;
+      return data;
+    } catch (error) {
+      console.error('Error refreshing Fitbit token:', error.response?.data || error.message);
+      throw new Error('Failed to refresh access token');
+    }
+  }
+
+  // Get user's Fitbit profile
+  async getUserProfile() {
+    try {
+      const { data } = await axios.get(`${this.apiBaseUrl}/1/user/-/profile.json`, {
+        headers: { Authorization: `Bearer ${this.accessToken}` }
+      });
+      return data.user;
+    } catch (error) {
+      console.error('Error getting Fitbit profile:', error.response?.data || error.message);
+      throw new Error('Failed to get Fitbit profile');
+    }
+  }
+}
+
+module.exports = FitbitService;

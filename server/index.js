@@ -11,6 +11,7 @@ console.log('JWT Secret length:', process.env.JWT_SECRET ? process.env.JWT_SECRE
 const stepRoutes = require('./routes/stepRoutes');
 const authRoutes = require('./routes/authRoutes');
 const googleFitRoutes = require('./routes/googleFitRoutes');
+const fitbitRoutes = require('./routes/fitbitRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -34,6 +35,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/steps', stepRoutes);
 app.use('/api/google-fit', googleFitRoutes);
+app.use('/api/fitbit', fitbitRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -59,5 +61,6 @@ app.listen(PORT, () => {
   console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
   console.log(`Steps endpoint: http://localhost:${PORT}/api/steps`);
   console.log(`Google Fit endpoints: http://localhost:${PORT}/api/google-fit`);
+  console.log(`Fitbit endpoints: http://localhost:${PORT}/api/fitbit`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 

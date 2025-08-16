@@ -21,6 +21,12 @@ const ProfilePage = () => {
     lastSync: null
   });
   const [googleFitLoading, setGoogleFitLoading] = useState(false);
+  const [fitbitStatus, setFitbitStatus] = useState({
+    connected: false,
+    connectedAt: null,
+    lastSync: null
+  });
+  const [fitbitLoading, setFitbitLoading] = useState(false);
 
   // Load profile from database
   useEffect(() => {
@@ -72,6 +78,30 @@ const ProfilePage = () => {
       loadGoogleFitStatus();
     }, []);
 
+    // Load Fitbit connection status
+    useEffect(() => {
+      const loadFitbitStatus = async () => {
+        try {
+          const token = localStorage.getItem('fithub_token');
+          if (token) {
+            const response = await fetch('http://localhost:5001/api/fitbit/status', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (response.ok) {
+              const status = await response.json();
+              setFitbitStatus(status);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading Fitbit status:', error);
+        }
+      };
+  
+      loadFitbitStatus();
+    }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -101,6 +131,31 @@ const ProfilePage = () => {
       avatar: profile.avatar
     });
     setIsEditing(false);
+  };
+
+    // Handle Fitbit connection
+  const handleConnectFitbit = async () => {
+    try {
+      setFitbitLoading(true);
+      const token = localStorage.getItem('fithub_token');
+      const response = await fetch('http://localhost:5001/api/fitbit/auth-url', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Open Fitbit OAuth in new window
+        window.open(data.authUrl, '_blank', 'width=500,height=600');
+      }
+    } catch (error) {
+      console.error('Error getting Fitbit auth URL:', error);
+      setSaveMessage('Failed to connect Fitbit. Please try again.');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setFitbitLoading(false);
+    }
   };
 
   // Handle Google Fit connection
@@ -372,61 +427,137 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Google Fit Integration Section */}
+        
+
+        {/* Fitness App Integrations Section */}
         <div className="contribution-section" style={{ marginTop: '20px' }}>
-          <h2 className="contribution-title">Google Fit Integration</h2>
+          <h2 className="contribution-title">Fitness App Integrations</h2>
           <p className="contribution-subtitle">
-            Connect your Google Fit account to automatically sync your step data
+            Connect your fitness apps to automatically sync your step data
           </p>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '16px' }}>
+            {/* Google Fit Integration */}
             <div style={{ 
-              padding: '12px 16px', 
-              backgroundColor: googleFitStatus.connected ? '#28a745' : '#6c757d',
-              color: '#ffffff',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '500'
+              padding: '16px', 
+              border: '1px solid #30363d', 
+              borderRadius: '8px',
+              backgroundColor: '#161b22'
             }}>
-              {googleFitStatus.connected ? 'Connected' : 'Not Connected'}
-            </div>
-            
-            {!googleFitStatus.connected ? (
-              <button
-                onClick={handleConnectGoogleFit}
-                disabled={googleFitLoading}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', color: '#f0f6fc' }}>Google Fit</h3>
+                <div style={{ 
+                  padding: '8px 12px', 
+                  backgroundColor: googleFitStatus.connected ? '#28a745' : '#6c757d',
                   color: '#ffffff',
-                  backgroundColor: '#007bff',
-                  border: '1px solid #007bff',
                   borderRadius: '6px',
-                  cursor: googleFitLoading ? 'not-allowed' : 'pointer',
-                  opacity: googleFitLoading ? 0.6 : 1,
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  if (!googleFitLoading) {
-                    e.target.style.backgroundColor = '#0056b3';
-                    e.target.style.borderColor = '#0056b3';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!googleFitLoading) {
-                    e.target.style.backgroundColor = '#007bff';
-                    e.target.style.borderColor = '#007bff';
-                  }
-                }}
-              >
-                {googleFitLoading ? 'Loading...' : 'Connect Google Fit'}
-              </button>
-            ) : (
-              <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                Connected since: {googleFitStatus.connectedAt ? new Date(googleFitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                  fontSize: '12px',
+                  fontWeight: '500'
+                }}>
+                  {googleFitStatus.connected ? 'Connected' : 'Not Connected'}
+                </div>
               </div>
-            )}
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {!googleFitStatus.connected ? (
+                  <button
+                    onClick={handleConnectGoogleFit}
+                    disabled={googleFitLoading}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#ffffff',
+                      backgroundColor: '#007bff',
+                      border: '1px solid #007bff',
+                      borderRadius: '6px',
+                      cursor: googleFitLoading ? 'not-allowed' : 'pointer',
+                      opacity: googleFitLoading ? 0.6 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      if (!googleFitLoading) {
+                        e.target.style.backgroundColor = '#0056b3';
+                        e.target.style.borderColor = '#0056b3';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (!googleFitLoading) {
+                        e.target.style.backgroundColor = '#007bff';
+                        e.target.style.borderColor = '#007bff';
+                      }
+                    }}
+                  >
+                    {googleFitLoading ? 'Loading...' : 'Connect Google Fit'}
+                  </button>
+                ) : (
+                  <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                    Connected since: {googleFitStatus.connectedAt ? new Date(googleFitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Fitbit Integration */}
+            <div style={{ 
+              padding: '16px', 
+              border: '1px solid #30363d', 
+              borderRadius: '8px',
+              backgroundColor: '#161b22'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', color: '#f0f6fc' }}>Fitbit</h3>
+                <div style={{ 
+                  padding: '8px 12px', 
+                  backgroundColor: fitbitStatus.connected ? '#28a745' : '#6c757d',
+                  color: '#ffffff',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '500'
+                }}>
+                  {fitbitStatus.connected ? 'Connected' : 'Not Connected'}
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {!fitbitStatus.connected ? (
+                  <button
+                    onClick={handleConnectFitbit}
+                    disabled={fitbitLoading}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#ffffff',
+                      backgroundColor: '#00C9A7',
+                      border: '1px solid #00C9A7',
+                      borderRadius: '6px',
+                      cursor: fitbitLoading ? 'not-allowed' : 'pointer',
+                      opacity: fitbitLoading ? 0.6 : 1,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      if (!fitbitLoading) {
+                        e.target.style.backgroundColor = '#00A085';
+                        e.target.style.borderColor = '#00A085';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (!fitbitLoading) {
+                        e.target.style.backgroundColor = '#00C9A7';
+                        e.target.style.borderColor = '#00C9A7';
+                      }
+                    }}
+                  >
+                    {fitbitLoading ? 'Loading...' : 'Connect Fitbit'}
+                  </button>
+                ) : (
+                  <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                    Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
