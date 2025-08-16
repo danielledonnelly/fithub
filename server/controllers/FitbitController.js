@@ -5,6 +5,7 @@ class FitbitController {
   // Get OAuth URL for user to authorize Fitbit
   static async getAuthUrl(req, res) {
     try {
+      console.log('=== FITBIT AUTH URL REQUEST ===');
       console.log('Request user object:', req.user);
       console.log('Request user sub:', req.user?.sub);
       
@@ -13,6 +14,9 @@ class FitbitController {
       
       const fitbitService = new FitbitService();
       const authUrl = fitbitService.getAuthUrl(userId);
+      
+      console.log('Generated auth URL:', authUrl);
+      console.log('===============================');
       
       res.json({
         authUrl,
@@ -30,10 +34,18 @@ class FitbitController {
   // Handle OAuth callback and store tokens
   static async handleCallback(req, res) {
     try {
+      console.log('=== FITBIT OAUTH CALLBACK RECEIVED ===');
+      console.log('Query params:', req.query);
+      console.log('Full URL:', req.url);
+      
       const { code, state } = req.query;
       const userId = state; // Get user ID from state parameter
+      
+      console.log('Code:', code ? '✅ Present' : '❌ Missing');
+      console.log('State (userId):', userId);
 
       if (!code) {
+        console.log('❌ No authorization code received');
         return res.status(400).json({
           error: "Authorization code is required",
         });
@@ -41,15 +53,27 @@ class FitbitController {
 
       const fitbitService = new FitbitService();
       const tokens = await fitbitService.getTokensFromCode(code);
+      
+      console.log('=== FITBIT OAUTH CALLBACK DEBUG ===');
+      console.log('User ID:', userId);
+      console.log('Tokens received:', {
+        hasAccessToken: !!tokens.access_token,
+        hasRefreshToken: !!tokens.refresh_token,
+        expiresIn: tokens.expires_in,
+        tokenFields: Object.keys(tokens)
+      });
 
       // Store tokens in user's record
-      await UserModel.updateUser(userId, {
+      const updateResult = await UserModel.updateUser(userId, {
         fitbit_access_token: tokens.access_token,
         fitbit_refresh_token: tokens.refresh_token,
         fitbit_token_expiry: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null,
         fitbit_connected: true,
         fitbit_connected_at: new Date(),
       });
+      
+      console.log('Update result:', updateResult);
+      console.log('=====================================');
 
       res.json({
         message: "Fitbit connected successfully",
@@ -71,7 +95,16 @@ class FitbitController {
 
       // Get user's Fitbit tokens
       const user = await UserModel.findById(userId);
-      if (!user.fitbit_connected || !user.fitbit_access_token) {
+      console.log('=== FITBIT SYNC DEBUG ===');
+      console.log('User ID:', userId);
+      console.log('User object:', user);
+      console.log('User fields:', user ? Object.keys(user) : 'No user found');
+      console.log('Fitbit connected:', user?.fitbit_connected);
+      console.log('Fitbit access token exists:', !!user?.fitbit_access_token);
+      console.log('========================');
+      
+      if (!user?.fitbit_connected || !user?.fitbit_access_token) {
+        console.log('❌ Fitbit sync failed - not connected or no access token');
         return res.status(400).json({
           error: "Fitbit not connected",
           message: "Please connect your Fitbit account first",
@@ -165,11 +198,18 @@ class FitbitController {
     try {
       const userId = req.user.sub;
       const user = await UserModel.findById(userId);
+      
+      console.log('Fitbit status check:', {
+        userId,
+        fitbitConnected: user?.fitbit_connected,
+        hasAccessToken: !!user?.fitbit_access_token,
+        userFields: user ? Object.keys(user) : 'No user found'
+      });
 
       res.json({
-        connected: user.fitbit_connected || false,
-        connectedAt: user.fitbit_connected_at,
-        lastSync: user.fitbit_last_sync,
+        connected: user?.fitbit_connected || false,
+        connectedAt: user?.fitbit_connected_at,
+        lastSync: user?.fitbit_last_sync,
       });
     } catch (error) {
       console.error("Error getting connection status:", error);

@@ -27,6 +27,7 @@ const ProfilePage = () => {
     lastSync: null
   });
   const [fitbitLoading, setFitbitLoading] = useState(false);
+  const [fitbitSyncLoading, setFitbitSyncLoading] = useState(false);
 
   // Load profile from database
   useEffect(() => {
@@ -100,6 +101,28 @@ const ProfilePage = () => {
       };
   
       loadFitbitStatus();
+      
+      // Set up polling to check status every 5 seconds during OAuth flow
+      const interval = setInterval(loadFitbitStatus, 5000);
+      
+      // Listen for OAuth completion messages from popup
+      const handleMessage = (event) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'FITBIT_OAUTH_COMPLETE') {
+          console.log('Fitbit OAuth completed, refreshing status...');
+          loadFitbitStatus();
+          setSaveMessage('Fitbit connected successfully!');
+          setTimeout(() => setSaveMessage(''), 3000);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('message', handleMessage);
+      };
     }, []);
 
   const handleInputChange = (e) => {
@@ -147,7 +170,43 @@ const ProfilePage = () => {
       if (response.ok) {
         const data = await response.json();
         // Open Fitbit OAuth in new window
-        window.open(data.authUrl, '_blank', 'width=500,height=600');
+        const popup = window.open(data.authUrl, '_blank', 'width=500,height=600');
+        
+        // Check if popup was blocked
+        if (!popup) {
+          setSaveMessage('Popup was blocked. Please allow popups and try again.');
+          setTimeout(() => setSaveMessage(''), 5000);
+          return;
+        }
+        
+        // Set up a check for popup completion
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            // Popup closed, refresh status
+            setTimeout(() => {
+              const loadFitbitStatus = async () => {
+                try {
+                  const token = localStorage.getItem('fithub_token');
+                  if (token) {
+                    const response = await fetch('http://localhost:5001/api/fitbit/status', {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    });
+                    if (response.ok) {
+                      const status = await response.json();
+                      setFitbitStatus(status);
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error loading Fitbit status:', error);
+                }
+              };
+              loadFitbitStatus();
+            }, 1000); // Wait 1 second for backend to process
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Error getting Fitbit auth URL:', error);
@@ -155,6 +214,79 @@ const ProfilePage = () => {
       setTimeout(() => setSaveMessage(''), 3000);
     } finally {
       setFitbitLoading(false);
+    }
+  };
+
+  // Handle Fitbit sync
+  const handleSyncFitbit = async () => {
+    try {
+      setFitbitSyncLoading(true);
+      const token = localStorage.getItem('fithub_token');
+      const response = await fetch('http://localhost:5001/api/fitbit/sync', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSaveMessage(`Fitbit sync successful! Synced ${result.stepsSynced} days of step data.`);
+        setTimeout(() => setSaveMessage(''), 5000);
+        
+        // Refresh the Fitbit status to show last sync time
+        const statusResponse = await fetch('http://localhost:5001/api/fitbit/status', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (statusResponse.ok) {
+          const status = await statusResponse.json();
+          setFitbitStatus(status);
+        }
+      } else {
+        const error = await response.json();
+        setSaveMessage(`Fitbit sync failed: ${error.message}`);
+        setTimeout(() => setSaveMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('Error syncing Fitbit:', error);
+      setSaveMessage('Failed to sync Fitbit. Please try again.');
+      setTimeout(() => setSaveMessage(''), 5000);
+    } finally {
+      setFitbitSyncLoading(false);
+    }
+  };
+
+  const handleDisconnectFitbit = async () => {
+    try {
+      const token = localStorage.getItem('fithub_token');
+      const response = await fetch('http://localhost:5001/api/fitbit/disconnect', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        setSaveMessage('Fitbit disconnected successfully!');
+        setTimeout(() => setSaveMessage(''), 5000);
+        
+        // Update local state
+        setFitbitStatus({
+          connected: false,
+          connectedAt: null,
+          lastSync: null
+        });
+      } else {
+        const error = await response.json();
+        setSaveMessage(`Failed to disconnect: ${error.message}`);
+        setTimeout(() => setSaveMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('Error disconnecting Fitbit:', error);
+      setSaveMessage('Failed to disconnect Fitbit. Please try again.');
+      setTimeout(() => setSaveMessage(''), 5000);
     }
   };
 
@@ -552,8 +684,52 @@ const ProfilePage = () => {
                     {fitbitLoading ? 'Loading...' : 'Connect Fitbit'}
                   </button>
                 ) : (
-                  <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                    Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                      Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
+                    </div>
+                    <button
+                      onClick={handleSyncFitbit}
+                      disabled={fitbitSyncLoading}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#ffffff',
+                        backgroundColor: '#00A085',
+                        border: '1px solid #00A085',
+                        borderRadius: '4px',
+                        cursor: fitbitSyncLoading ? 'not-allowed' : 'pointer',
+                        opacity: fitbitSyncLoading ? 0.6 : 1,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {fitbitSyncLoading ? 'Syncing...' : 'Sync Steps'}
+                    </button>
+                    <button
+                      onClick={handleDisconnectFitbit}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        color: '#ffffff',
+                        backgroundColor: '#dc3545',
+                        border: '1px solid #dc3545',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.backgroundColor = '#c82333';
+                        e.target.style.borderColor = '#c82333';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.backgroundColor = '#dc3545';
+                        e.target.style.borderColor = '#dc3545';
+                      }}
+                    >
+                      Disconnect
+                    </button>
                   </div>
                 )}
               </div>

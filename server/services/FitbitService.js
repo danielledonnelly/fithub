@@ -28,16 +28,28 @@ class FitbitService {
   // Exchange authorization code for tokens
   async getTokensFromCode(code) {
     try {
+      console.log('=== FITBIT TOKEN EXCHANGE ===');
+      console.log('Client ID:', this.clientId ? '✅ Set' : '❌ Missing');
+      console.log('Client Secret:', this.clientSecret ? '✅ Set' : '❌ Missing');
+      console.log('Redirect URI:', this.redirectUri ? '✅ Set' : '❌ Missing');
+      console.log('Code:', code ? '✅ Present' : '❌ Missing');
+      
       const authHeader = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+      console.log('Auth header generated:', !!authHeader);
+
+      const requestBody = querystring.stringify({
+        client_id: this.clientId,
+        grant_type: 'authorization_code',
+        redirect_uri: this.redirectUri,
+        code
+      });
+      
+      console.log('Request body:', requestBody);
+      console.log('Token URL:', this.tokenUrl);
 
       const { data } = await axios.post(
         this.tokenUrl,
-        querystring.stringify({
-          client_id: this.clientId,
-          grant_type: 'authorization_code',
-          redirect_uri: this.redirectUri,
-          code
-        }),
+        requestBody,
         {
           headers: {
             Authorization: `Basic ${authHeader}`,
@@ -46,11 +58,18 @@ class FitbitService {
         }
       );
 
+      console.log('✅ Token exchange successful!');
+      console.log('Response data keys:', Object.keys(data));
+      console.log('Has access_token:', !!data.access_token);
+      console.log('Has refresh_token:', !!data.refresh_token);
+      console.log('===============================');
+
       this.accessToken = data.access_token;
       this.refreshToken = data.refresh_token;
       return data;
     } catch (error) {
-      console.error('Error getting Fitbit tokens:', error.response?.data || error.message);
+      console.error('❌ Error getting Fitbit tokens:', error.response?.data || error.message);
+      console.error('Full error:', error);
       throw new Error('Failed to get access tokens');
     }
   }
