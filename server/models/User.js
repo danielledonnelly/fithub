@@ -41,7 +41,7 @@ class UserModel {
   // Get user by ID
   static async findById(id) {
     const [rows] = await pool.query(
-      'SELECT id, username, email, display_name, bio, avatar, google_fit_connected, google_fit_connected_at, google_fit_last_sync, fitbit_connected, fitbit_connected_at, fitbit_last_sync FROM users WHERE id = ?',
+      'SELECT id, username, email, display_name, bio, avatar, google_fit_connected, google_fit_connected_at, google_fit_last_sync, fitbit_connected, fitbit_connected_at, fitbit_last_sync, fitbit_access_token, fitbit_refresh_token FROM users WHERE id = ?',
       [id]
     );
     return rows[0] || null;

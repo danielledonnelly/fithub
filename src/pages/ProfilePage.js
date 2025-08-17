@@ -102,8 +102,8 @@ const ProfilePage = () => {
   
       loadFitbitStatus();
       
-      // Set up polling to check status every 5 seconds during OAuth flow
-      const interval = setInterval(loadFitbitStatus, 5000);
+      // Set up polling to check status every 30 seconds during OAuth flow
+      const interval = setInterval(loadFitbitStatus, 30000);
       
       // Listen for OAuth completion messages from popup
       const handleMessage = (event) => {

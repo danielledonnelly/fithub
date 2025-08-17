@@ -111,6 +111,21 @@ class FitbitController {
         });
       }
 
+      // Check if we're syncing too frequently (rate limiting)
+      const lastSync = user.fitbit_last_sync;
+      if (lastSync) {
+        const timeSinceLastSync = Date.now() - new Date(lastSync).getTime();
+        const minSyncInterval = 5 * 60 * 1000; // 5 minutes
+        
+        if (timeSinceLastSync < minSyncInterval) {
+          const remainingTime = Math.ceil((minSyncInterval - timeSinceLastSync) / 1000 / 60);
+          return res.status(429).json({
+            error: "Sync too frequent",
+            message: `Please wait ${remainingTime} minutes before syncing again. Fitbit has rate limits.`,
+          });
+        }
+      }
+
       const fitbitService = new FitbitService();
 
       // Set credentials
@@ -119,14 +134,14 @@ class FitbitController {
         refresh_token: user.fitbit_refresh_token,
       });
 
-      // Get step data for last 30 days
+      // Get step data for last 7 days (reduced from 30 to avoid rate limiting)
       const endDate = new Date();
-      const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      const startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
       
       const stepData = {};
       let totalStepsSynced = 0;
 
-      // Fetch steps for each day in the range
+      // Fetch steps for each day in the range with rate limiting
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         try {
           const dayData = await fitbitService.getStepData(new Date(d));
@@ -134,9 +149,20 @@ class FitbitController {
             stepData[dayData.date] = dayData.steps;
             totalStepsSynced++;
           }
+          
+          // Add delay between API calls to respect rate limits
+          if (d < endDate) {
+            await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between calls
+          }
         } catch (dayError) {
           console.error(`Error fetching steps for ${d.toISOString().split('T')[0]}:`, dayError);
-          // Continue with other days
+          
+          // If we hit rate limit, stop and return what we have
+          if (dayError.message && dayError.message.includes('429')) {
+            console.log('Rate limit hit, stopping sync early');
+            break;
+          }
+          // Continue with other days for other types of errors
         }
       }
 
@@ -210,6 +236,11 @@ class FitbitController {
         connected: user?.fitbit_connected || false,
         connectedAt: user?.fitbit_connected_at,
         lastSync: user?.fitbit_last_sync,
+        debug: {
+          hasAccessToken: !!user?.fitbit_access_token,
+          hasRefreshToken: !!user?.fitbit_refresh_token,
+          userFields: user ? Object.keys(user) : []
+        }
       });
     } catch (error) {
       console.error("Error getting connection status:", error);
