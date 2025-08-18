@@ -264,26 +264,58 @@ class FitbitController {
       // If Fitbit is connected, try to get additional data
       if (user.fitbit_connected && user.fitbit_access_token) {
         try {
+          // Check if we've synced recently to avoid API spam
+          const lastSync = user.fitbit_last_sync;
+          if (lastSync) {
+            const timeSinceLastSync = Date.now() - new Date(lastSync).getTime();
+            const maxAgeForFitbitData = 24 * 60 * 60 * 1000; // 24 hours
+            
+            if (timeSinceLastSync < maxAgeForFitbitData) {
+              // Use cached Fitbit data from database instead of making new API calls
+              console.log('Using cached Fitbit data (synced within 24 hours)');
+              res.json({
+                steps: localSteps,
+                source: 'local_with_cached_fitbit'
+              });
+              return;
+            }
+          }
+          
+          // Only make API calls if we haven't synced recently
+          console.log('Fetching fresh Fitbit data for graph');
           const fitbitService = new FitbitService();
           fitbitService.setCredentials({
             access_token: user.fitbit_access_token,
             refresh_token: user.fitbit_refresh_token,
           });
           
-          // Get last 365 days of data for the graph
+          // Get last 30 days of data (reduced from 365 to avoid rate limits)
           const endDate = new Date();
-          const startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+          const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
           
           const fitbitSteps = {};
-          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          let apiCallsMade = 0;
+          const maxApiCalls = 10; // Limit to 10 API calls max
+          
+          for (let d = new Date(startDate); d <= endDate && apiCallsMade < maxApiCalls; d.setDate(d.getDate() + 1)) {
             try {
               const dayData = await fitbitService.getStepData(new Date(d));
               if (dayData.steps > 0) {
                 fitbitSteps[dayData.date] = dayData.steps;
               }
+              apiCallsMade++;
+              
+              // Add delay between API calls
+              if (apiCallsMade < maxApiCalls) {
+                await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+              }
             } catch (dayError) {
-              // Skip days with errors
-              continue;
+              console.error(`Error fetching Fitbit data for ${d.toISOString().split('T')[0]}:`, dayError);
+              if (dayError.message && dayError.message.includes('429')) {
+                console.log('Rate limit hit in graph data fetch, stopping early');
+                break;
+              }
+              // Continue for other errors
             }
           }
           
@@ -292,10 +324,11 @@ class FitbitController {
           
           res.json({
             steps: mergedSteps,
-            source: 'combined'
+            source: 'combined',
+            apiCallsMade
           });
         } catch (fitbitError) {
-          console.error('Fitbit error, falling back to local data:', fitbitError);
+          console.error('Fitbit error in graph fetch, falling back to local data:', fitbitError);
           res.json({
             steps: localSteps,
             source: 'local_only'

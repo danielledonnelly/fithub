@@ -164,13 +164,21 @@ const Dashboard = () => {
         return;
       }
       
-      // Just try to sync directly - if it fails, the backend will tell us why
-      const response = await fetch('http://localhost:5001/api/fitbit/sync', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      // Add timeout to prevent stuck loading state
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
       });
+      
+      // Just try to sync directly - if it fails, the backend will tell us why
+      const response = await Promise.race([
+        fetch('http://localhost:5001/api/fitbit/sync', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        timeoutPromise
+      ]);
       
       if (response.ok) {
         const result = await response.json();
@@ -190,7 +198,11 @@ const Dashboard = () => {
         }
       } else {
         const error = await response.json();
-        setError(`Fitbit sync failed: ${error.message}`);
+        if (response.status === 429) {
+          setError(`Rate limited: ${error.message}`);
+        } else {
+          setError(`Fitbit sync failed: ${error.message}`);
+        }
         setTimeout(() => setError(null), 5000);
       }
     } catch (error) {
@@ -312,22 +324,6 @@ const Dashboard = () => {
                 }}
               >
                 {loading ? 'Syncing...' : 'Sync Fitbit'}
-              </button>
-              <button
-                onClick={handleDisconnectFitbit}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  color: '#ffffff',
-                  backgroundColor: '#dc3545',
-                  border: '1px solid #dc3545',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Disconnect
               </button>
             </div>
           </div>

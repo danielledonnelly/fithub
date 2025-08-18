@@ -688,24 +688,7 @@ const ProfilePage = () => {
                     <div style={{ fontSize: '14px', color: '#6c757d' }}>
                       Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
                     </div>
-                    <button
-                      onClick={handleSyncFitbit}
-                      disabled={fitbitSyncLoading}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        color: '#ffffff',
-                        backgroundColor: '#00A085',
-                        border: '1px solid #00A085',
-                        borderRadius: '4px',
-                        cursor: fitbitSyncLoading ? 'not-allowed' : 'pointer',
-                        opacity: fitbitSyncLoading ? 0.6 : 1,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      {fitbitSyncLoading ? 'Syncing...' : 'Sync Steps'}
-                    </button>
+
                     <button
                       onClick={handleDisconnectFitbit}
                       style={{

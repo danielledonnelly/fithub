@@ -136,12 +136,6 @@ const LoginForm = ({ onToggleForm, onSuccess }) => {
           </button>
         </p>
       </div>
-
-      <div className="auth-demo">
-        <p>Demo Account:</p>
-        <p><strong>Email:</strong> admin@fithub.com</p>
-        <p><strong>Password:</strong> password</p>
-      </div>
     </div>
   );
 };
