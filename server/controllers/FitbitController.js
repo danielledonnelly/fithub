@@ -134,35 +134,49 @@ class FitbitController {
         refresh_token: user.fitbit_refresh_token,
       });
 
-      // Get step data for last 7 days (reduced from 30 to avoid rate limiting)
+      // Get step data for last 7 days, starting with most recent
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
       
       const stepData = {};
       let totalStepsSynced = 0;
+      let rateLimitHit = false;
 
-      // Fetch steps for each day in the range with rate limiting
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      // Create array of days to fetch, starting with most recent
+      const daysToFetch = [];
+      for (let d = new Date(endDate); d >= startDate; d.setDate(d.getDate() - 1)) {
+        daysToFetch.push(new Date(d));
+      }
+
+      // Fetch steps starting from most recent days
+      for (const day of daysToFetch) {
         try {
-          const dayData = await fitbitService.getStepData(new Date(d));
+          console.log(`📅 Fetching steps for ${day.toISOString().split('T')[0]}...`);
+          const dayData = await fitbitService.getStepData(day);
           if (dayData.steps > 0) {
             stepData[dayData.date] = dayData.steps;
             totalStepsSynced++;
+            console.log(`✅ ${dayData.date}: ${dayData.steps} steps`);
+          } else {
+            console.log(`📊 ${dayData.date}: 0 steps`);
           }
           
           // Add delay between API calls to respect rate limits
-          if (d < endDate) {
-            await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between calls
+          if (day !== daysToFetch[daysToFetch.length - 1]) {
+            await new Promise(resolve => setTimeout(resolve, 400)); // 400ms delay
           }
         } catch (dayError) {
-          console.error(`Error fetching steps for ${d.toISOString().split('T')[0]}:`, dayError);
+          console.error(`❌ Error fetching steps for ${day.toISOString().split('T')[0]}:`, dayError);
           
           // If we hit rate limit, stop and return what we have
           if (dayError.message && dayError.message.includes('429')) {
-            console.log('Rate limit hit, stopping sync early');
+            console.log('🚫 Rate limit hit, stopping sync early');
+            rateLimitHit = true;
             break;
           }
-          // Continue with other days for other types of errors
+          
+          // For other errors, continue but log them
+          console.log(`⚠️ Continuing despite error for ${day.toISOString().split('T')[0]}`);
         }
       }
 
@@ -180,9 +194,15 @@ class FitbitController {
       });
 
       res.json({
-        message: "Steps synced successfully",
+        message: rateLimitHit 
+          ? `Steps synced partially (rate limit reached). Got ${totalStepsSynced} days.` 
+          : "Steps synced successfully",
         stepsSynced: totalStepsSynced,
         stepData,
+        rateLimitHit,
+        message: rateLimitHit 
+          ? `Partial sync: ${totalStepsSynced} days synced before hitting rate limit. Recent days prioritized.` 
+          : `Full sync: ${totalStepsSynced} days synced successfully.`
       });
     } catch (error) {
       console.error("Error syncing steps:", error);
