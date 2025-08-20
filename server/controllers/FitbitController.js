@@ -167,14 +167,44 @@ class FitbitController {
           }
         } catch (dayError) {
           console.error(`❌ Error fetching steps for ${day.toISOString().split('T')[0]}:`, dayError);
-          
+
+          // Handle expired token by refreshing once, persisting, and retrying this day
+          if (dayError?.code === 'FITBIT_EXPIRED_TOKEN' || (dayError?.message && dayError.message.includes('expired_token'))) {
+            try {
+              const refreshed = await fitbitService.refreshAccessToken();
+              // Persist new tokens to user
+              await UserModel.updateUser(userId, {
+                fitbit_access_token: refreshed.access_token,
+                fitbit_refresh_token: refreshed.refresh_token || user.fitbit_refresh_token,
+                fitbit_token_expiry: refreshed.expires_in ? new Date(Date.now() + refreshed.expires_in * 1000) : null,
+              });
+              // Update in-memory credentials
+              fitbitService.setCredentials({
+                access_token: refreshed.access_token,
+                refresh_token: refreshed.refresh_token || user.fitbit_refresh_token,
+              });
+              // Retry once for this day
+              const retryData = await fitbitService.getStepData(day);
+              if (retryData.steps > 0) {
+                stepData[retryData.date] = retryData.steps;
+                totalStepsSynced++;
+                console.log(`✅ (after refresh) ${retryData.date}: ${retryData.steps} steps`);
+              }
+              // small delay after refresh to be safe
+              await new Promise(resolve => setTimeout(resolve, 300));
+              continue; // proceed to next day
+            } catch (refreshErr) {
+              console.error('❌ Fitbit token refresh failed:', refreshErr);
+            }
+          }
+
           // If we hit rate limit, stop and return what we have
           if (dayError.message && dayError.message.includes('429')) {
             console.log('🚫 Rate limit hit, stopping sync early');
             rateLimitHit = true;
             break;
           }
-          
+
           // For other errors, continue but log them
           console.log(`⚠️ Continuing despite error for ${day.toISOString().split('T')[0]}`);
         }
@@ -331,6 +361,32 @@ class FitbitController {
               }
             } catch (dayError) {
               console.error(`Error fetching Fitbit data for ${d.toISOString().split('T')[0]}:`, dayError);
+              // Handle expired token by refreshing once, persisting, and retrying this date
+              if (dayError?.code === 'FITBIT_EXPIRED_TOKEN' || (dayError?.message && dayError.message.includes('expired_token'))) {
+                try {
+                  const refreshed = await fitbitService.refreshAccessToken();
+                  await UserModel.updateUser(userId, {
+                    fitbit_access_token: refreshed.access_token,
+                    fitbit_refresh_token: refreshed.refresh_token || user.fitbit_refresh_token,
+                    fitbit_token_expiry: refreshed.expires_in ? new Date(Date.now() + refreshed.expires_in * 1000) : null,
+                  });
+                  fitbitService.setCredentials({
+                    access_token: refreshed.access_token,
+                    refresh_token: refreshed.refresh_token || user.fitbit_refresh_token,
+                  });
+                  const retryData = await fitbitService.getStepData(new Date(d));
+                  if (retryData.steps > 0) {
+                    fitbitSteps[retryData.date] = retryData.steps;
+                  }
+                  apiCallsMade++;
+                  if (apiCallsMade < maxApiCalls) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  }
+                  continue;
+                } catch (refreshErr) {
+                  console.error('Fitbit token refresh failed (graph fetch):', refreshErr);
+                }
+              }
               if (dayError.message && dayError.message.includes('429')) {
                 console.log('Rate limit hit in graph data fetch, stopping early');
                 break;

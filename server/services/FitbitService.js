@@ -95,7 +95,27 @@ class FitbitService {
         steps: data.summary?.steps || 0
       };
     } catch (error) {
+      const status = error.response?.status;
+      const fitbitErrors = error.response?.data?.errors;
       console.error('Error fetching Fitbit step data:', error.response?.data || error.message);
+
+      // Detect expired token from Fitbit error payload
+      if (Array.isArray(fitbitErrors) && fitbitErrors.some(e => e?.errorType === 'expired_token')) {
+        const expiredErr = new Error('FITBIT_EXPIRED_TOKEN');
+        expiredErr.code = 'FITBIT_EXPIRED_TOKEN';
+        expiredErr.status = status;
+        expiredErr.fitbit = fitbitErrors;
+        throw expiredErr;
+      }
+
+      // Surface rate limit explicitly so callers can handle it
+      if (status === 429) {
+        const rateErr = new Error('429 Too Many Requests');
+        rateErr.code = 'FITBIT_RATE_LIMIT';
+        rateErr.status = 429;
+        throw rateErr;
+      }
+
       throw new Error('Failed to fetch step data from Fitbit');
     }
   }
