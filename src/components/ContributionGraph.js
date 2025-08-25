@@ -36,6 +36,9 @@ function addDays(date, days) {
 
 const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   const [activityMode, setActivityMode] = useState('active');
+  
+  // This graph shows year-to-date data (January 1st to current date)
+  // It maintains grid alignment by starting from the previous Sunday
 
   // Get daily goal from localStorage for goal-based mode, with fallback to prop
   const getDailyGoal = () => {
@@ -63,20 +66,23 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
     });
   }
 
-  // Calculate the start date (previous Sunday, 1 year ago from today)
+  // Calculate the start date (January 1st of current year)
   const today = new Date();
-  const oneYearAgo = addDays(today, -364); // 365 days including today
-  const startDay = oneYearAgo.getDay();
-  const startDate = addDays(oneYearAgo, -startDay); // Go back to previous Sunday
+  const currentYear = today.getFullYear();
+  const startDate = new Date(currentYear, 0, 1); // January 1st of current year
+  const startDay = startDate.getDay();
+  const adjustedStartDate = addDays(startDate, -startDay); // Go back to previous Sunday for grid alignment
 
-  // Calculate the number of days to display (from startDate to today, inclusive)
+  // Calculate the number of days to display (from January 1st to today, inclusive)
   const totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
   const numWeeks = Math.ceil(totalDays / 7);
+  
+  // Note: We use adjustedStartDate for grid alignment, but actual data starts from January 1st
 
   // Generate the weeks data
   const generateYearData = () => {
     const weeks = [];
-    let currentDate = new Date(startDate);
+    let currentDate = new Date(adjustedStartDate);
     for (let week = 0; week < numWeeks; week++) {
       const weekData = [];
       for (let day = 0; day < 7; day++) {
@@ -117,12 +123,16 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
             }
           }
         }
+        // Only show data for dates in the current year (January 1st onwards)
+        const isInCurrentYear = currentDate >= startDate;
+        
         weekData.push({
           date: dateString,
-          steps: steps,
-          level: level,
+          steps: isInCurrentYear ? steps : 0,
+          level: isInCurrentYear ? level : null,
           dayOfWeek: day,
-          isCurrentMonth: currentDate <= today
+          isCurrentMonth: currentDate <= today,
+          isInCurrentYear: isInCurrentYear
         });
         currentDate = addDays(currentDate, 1);
       }
@@ -159,13 +169,16 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
       <div className="contribution-months">
         <div className="month-labels">
           {Array.from({ length: 12 }, (_, i) => {
-            const date = new Date();
-            date.setMonth(date.getMonth() - 12 + i);
-            return (
-              <div key={i} className="month-label">
-                {date.toLocaleDateString('en-US', { month: 'short' })}
-              </div>
-            );
+            const date = new Date(currentYear, i, 1);
+            // Only show months up to the current month
+            if (date <= today) {
+              return (
+                <div key={i} className="month-label">
+                  {date.toLocaleDateString('en-US', { month: 'short' })}
+                </div>
+              );
+            }
+            return null;
           })}
         </div>
       </div>
