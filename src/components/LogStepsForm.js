@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import StepService from '../services/StepService';
 
 const LogStepsForm = ({ onSuccess }) => {
-  // Get today's date in YYYY-MM-DD format for the default value
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date in YYYY-MM-DD format using local time
+  const today = new Date().toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD format
   
   const [date, setDate] = useState(today);
   const [steps, setSteps] = useState('');
@@ -43,14 +43,15 @@ const LogStepsForm = ({ onSuccess }) => {
             onChange={e => setDate(e.target.value)}
             required
             style={{
-              padding: '4px 6px',
+              padding: '8px 6px',
               backgroundColor: '#0d1117',
               border: '1px solid #30363d',
               borderRadius: '4px',
               color: '#8b949e',
               fontSize: '11px',
               width: '100%',
-              colorScheme: 'dark'
+              colorScheme: 'dark',
+              height: '32px'
             }}
           />
         </div>
@@ -70,13 +71,14 @@ const LogStepsForm = ({ onSuccess }) => {
             min="0"
             required
             style={{
-              padding: '4px 6px',
+              padding: '8px 6px',
               backgroundColor: '#0d1117',
               border: '1px solid #30363d',
               borderRadius: '4px',
               color: '#c9d1d9',
               fontSize: '11px',
-              width: '100%'
+              width: '100%',
+              height: '32px'
             }}
           />
         </div>
@@ -87,7 +89,7 @@ const LogStepsForm = ({ onSuccess }) => {
         disabled={loading}
         style={{
           marginTop: '4px',
-          padding: '6px 12px',
+          padding: '8px 12px',
           backgroundColor: '#BB1F21',
           color: '#ffffff',
           border: '1px solid #BB1F21',
@@ -96,7 +98,8 @@ const LogStepsForm = ({ onSuccess }) => {
           fontSize: '11px',
           fontWeight: '600',
           transition: 'all 0.2s ease',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          height: '32px'
         }}
         onMouseEnter={(e) => {
           if (!loading) {

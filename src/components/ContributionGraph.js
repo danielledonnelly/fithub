@@ -39,6 +39,7 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   
   // This graph shows year-to-date data (January 1st to current date)
   // It maintains grid alignment by starting from the previous Sunday
+  // All dates use the device's local timezone
 
   // Get daily goal from localStorage for goal-based mode, with fallback to prop
   const getDailyGoal = () => {
@@ -51,10 +52,10 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   if (data && typeof data === 'object') {
     Object.keys(data).forEach(key => {
       try {
-        // Parse the date key and convert to YYYY-MM-DD format
+        // Parse the date key and convert to YYYY-MM-DD format using local time
         const date = new Date(key);
         if (!isNaN(date.getTime())) {
-          const dateString = date.toISOString().split('T')[0];
+          const dateString = formatDateLocal(date);
           normalizedData[dateString] = data[key];
         }
       } catch (e) {
@@ -67,6 +68,7 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   }
 
   // Calculate the start date (January 1st of current year)
+  // Use local time to ensure we get the correct current date
   const today = new Date();
   const currentYear = today.getFullYear();
   const startDate = new Date(currentYear, 0, 1); // January 1st of current year
@@ -75,7 +77,10 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
 
   // Calculate the number of days to display (from January 1st to today, inclusive)
   const totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  const numWeeks = Math.ceil(totalDays / 7);
+  
+  // Calculate weeks needed to include the current week
+  const daysFromAdjustedStart = Math.ceil((today - adjustedStartDate) / (1000 * 60 * 60 * 24)) + 1;
+  const numWeeks = Math.ceil(daysFromAdjustedStart / 7);
   
   // Note: We use adjustedStartDate for grid alignment, but actual data starts from January 1st
 
@@ -163,6 +168,17 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const currentThresholds = ACTIVITY_MODES[activityMode].thresholds;
   const dailyGoal = getDailyGoal();
+  
+  // Debug: Log current dates for troubleshooting
+  console.log('Debug dates:', {
+    today: today.toISOString().split('T')[0],
+    currentYear,
+    startDate: startDate.toISOString().split('T')[0],
+    adjustedStartDate: adjustedStartDate.toISOString().split('T')[0],
+    totalDays,
+    numWeeks,
+    daysFromAdjustedStart: Math.ceil((today - adjustedStartDate) / (1000 * 60 * 60 * 24)) + 1
+  });
 
   return (
     <div className="contribution-graph">

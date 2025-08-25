@@ -55,7 +55,7 @@ const Dashboard = () => {
         if (token) {
           try {
             // First check if Fitbit is connected
-            const statusResponse = await fetch('http://localhost:5001/api/fitbit/status', {
+            const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
@@ -65,7 +65,7 @@ const Dashboard = () => {
               const status = await statusResponse.json();
               if (status.connected) {
                 // Fitbit is connected, try to get combined data
-                const response = await fetch('http://localhost:5001/api/fitbit/steps-for-graph', {
+                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
                   headers: {
                     'Authorization': `Bearer ${token}`
                   }
@@ -172,7 +172,7 @@ const Dashboard = () => {
       
       // Just try to sync directly - if it fails, the backend will tell us why
       const response = await Promise.race([
-        fetch('http://localhost:5001/api/fitbit/sync', {
+        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/sync`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -187,7 +187,7 @@ const Dashboard = () => {
         setTimeout(() => setError(null), 5000);
         
         // Refresh the step data
-        const dataResponse = await fetch('http://localhost:5001/api/fitbit/steps-for-graph', {
+        const dataResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -218,7 +218,7 @@ const Dashboard = () => {
   const handleDisconnectFitbit = async () => {
     try {
       const token = localStorage.getItem('fithub_token');
-      const response = await fetch('http://localhost:5001/api/fitbit/disconnect', {
+              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/disconnect`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

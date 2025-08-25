@@ -18,7 +18,7 @@ const Goals = () => {
       if (token) {
         try {
           // First check if Fitbit is connected
-          const statusResponse = await fetch('http://localhost:5001/api/fitbit/status', {
+          const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -28,7 +28,7 @@ const Goals = () => {
             const status = await statusResponse.json();
             if (status.connected) {
               // Fitbit is connected, try to get combined data
-              const response = await fetch('http://localhost:5001/api/fitbit/steps-for-graph', {
+              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
                 headers: {
                   'Authorization': `Bearer ${token}`
                 }
@@ -71,7 +71,7 @@ const Goals = () => {
         if (token) {
           try {
             // First check if Fitbit is connected
-            const statusResponse = await fetch('http://localhost:5001/api/fitbit/status', {
+            const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
@@ -81,7 +81,7 @@ const Goals = () => {
               const status = await statusResponse.json();
               if (status.connected) {
                 // Fitbit is connected, try to get combined data
-                const response = await fetch('http://localhost:5001/api/fitbit/steps-for-graph', {
+                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
                   headers: {
                     'Authorization': `Bearer ${token}`
                   }
