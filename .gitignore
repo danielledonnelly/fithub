@@ -39,3 +39,6 @@ server/test-login.js
 
 # User uploads
 server/uploads/
+
+# Tesseract OCR training data
+server/eng.traineddata
