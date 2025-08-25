@@ -28,7 +28,7 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess 
             <div className="stat-label">Current Streak</div>
           </div>
           <div className="stat">
-            <div className="stat-number">{totalSteps || 0}</div>
+            <div className="stat-number">{(totalSteps || 0).toLocaleString()}</div>
             <div className="stat-label">Total Steps</div>
           </div>
           {/* Commented out for now

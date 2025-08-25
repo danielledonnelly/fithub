@@ -1,41 +1,124 @@
 import React, { useState, useEffect } from 'react';
 import StepService from '../services/StepService';
 
-const Progress = () => {
+const Goals = () => {
   const [stepData, setStepData] = useState({});
   const [loading, setLoading] = useState(true);
   const [dailyGoal, setDailyGoal] = useState(10000);
   const [weeklyGoal, setWeeklyGoal] = useState(70000);
   const [isEditingGoals, setIsEditingGoals] = useState(false);
+  const [goalType, setGoalType] = useState('daily'); // daily, weekly, custom
+
+  const fetchStepData = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to get combined step data (local + Fitbit) first
+      const token = localStorage.getItem('fithub_token');
+      if (token) {
+        try {
+          // First check if Fitbit is connected
+          const statusResponse = await fetch('http://localhost:5001/api/fitbit/status', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            if (status.connected) {
+              // Fitbit is connected, try to get combined data
+              const response = await fetch('http://localhost:5001/api/fitbit/steps-for-graph', {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                setStepData(result.steps);
+                console.log('Using combined step data:', result.source);
+                return;
+              }
+            }
+          }
+        } catch (fitbitError) {
+          console.log('Fitbit data not available, falling back to local data');
+        }
+      }
+      
+      // Fallback to local step data
+      const data = await StepService.getAllSteps();
+      setStepData(data);
+    } catch (error) {
+      console.error('Failed to fetch step data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
 
-  const fetchStepData = async () => {
-    try {
+    const fetchData = async () => {
+      try {
         if (mounted) {
-      setLoading(true);
+          setLoading(true);
         }
         
-      const data = await StepService.getAllSteps();
-        
-        // Only update state if component is still mounted
-        if (mounted) {
-      setStepData(data);
+        // Try to get combined step data (local + Fitbit) first
+        const token = localStorage.getItem('fithub_token');
+        if (token) {
+          try {
+            // First check if Fitbit is connected
+            const statusResponse = await fetch('http://localhost:5001/api/fitbit/status', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (statusResponse.ok) {
+              const status = await statusResponse.json();
+              if (status.connected) {
+                // Fitbit is connected, try to get combined data
+                const response = await fetch('http://localhost:5001/api/fitbit/steps-for-graph', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  if (mounted) {
+                    setStepData(result.steps);
+                    console.log('Using combined step data:', result.source);
+                  }
+                  return;
+                }
+              }
+            }
+          } catch (fitbitError) {
+            console.log('Fitbit data not available, falling back to local data');
+          }
         }
-    } catch (error) {
-      console.error('Failed to fetch step data:', error);
-    } finally {
+        
+        // Fallback to local step data
+        const data = await StepService.getAllSteps();
         if (mounted) {
-      setLoading(false);
-    }
+          setStepData(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch step data:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchStepData();
+    fetchData();
     loadGoals();
     
-    // Cleanup function - sets mounted to false when component unmounts
     return () => {
       mounted = false;
     };
@@ -90,6 +173,8 @@ const Progress = () => {
     };
   };
 
+
+
   const getTodayProgress = () => {
     const today = new Date().toISOString().split('T')[0];
     const todaySteps = stepData[today] || 0;
@@ -102,16 +187,37 @@ const Progress = () => {
     };
   };
 
+  const getGoalStreak = () => {
+    let streak = 0;
+    const today = new Date();
+    
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateString = date.toISOString().split('T')[0];
+      const steps = stepData[dateString] || 0;
+      
+      if (steps >= dailyGoal) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
   const recentDays = getRecentDays(7);
   const weekProgress = getCurrentWeekProgress();
   const todayProgress = getTodayProgress();
+  const currentStreak = getGoalStreak();
 
   if (loading) {
     return (
       <div className="container">
         <div className="main-content">
           <div style={{ textAlign: 'center', padding: '40px', color: '#c9d1d9' }}>
-            Loading progress data...
+            Loading goals data...
           </div>
         </div>
       </div>
@@ -121,34 +227,70 @@ const Progress = () => {
   return (
     <div className="container">
       <div className="main-content">
-        {/* <h1 className="contribution-title">Progress</h1>
-        <p className="contribution-subtitle">
-          Track your daily and weekly step goals
-        </p> */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h1 className="contribution-title">Goals</h1>
+            <p className="contribution-subtitle">
+              Set and track your fitness goals using your step data
+            </p>
+          </div>
+          <button
+            onClick={fetchStepData}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#ffffff',
+              backgroundColor: '#00A085',
+              border: '1px solid #00A085',
+              borderRadius: '6px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = '#00A085';
+                e.target.style.borderColor = '#00A085';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!loading) {
+                e.target.style.backgroundColor = '#00A085';
+                e.target.style.borderColor = '#00A085';
+              }
+            }}
+          >
+            {loading ? 'Loading...' : 'Refresh Data'}
+          </button>
+        </div>
 
         {/* Goal Settings */}
         <div className="contribution-section" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 className="contribution-title" style={{ margin: 0 }}>Goals</h2>
+            <h2 className="contribution-title" style={{ margin: 0 }}>Goal Settings</h2>
             {!isEditingGoals ? (
               <button
                 onClick={() => setIsEditingGoals(true)}
                 style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
+                  padding: '8px 16px',
+                  fontSize: '14px',
                   fontWeight: '500',
-                  color: '#c9d1d9',
-                  backgroundColor: '#21262d',
-                  border: '1px solid #30363d',
+                  color: '#ffffff',
+                  backgroundColor: '#BB1F21',
+                  border: '1px solid #BB1F21',
                   borderRadius: '6px',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#30363d';
+                  e.target.style.backgroundColor = '#921E21';
+                  e.target.style.borderColor = '#921E21';
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#21262d';
+                  e.target.style.backgroundColor = '#BB1F21';
+                  e.target.style.borderColor = '#BB1F21';
                 }}
               >
                 Edit Goals
@@ -158,8 +300,8 @@ const Progress = () => {
                 <button
                   onClick={saveGoals}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: '12px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
                     fontWeight: '500',
                     color: '#ffffff',
                     backgroundColor: '#BB1F21',
@@ -168,13 +310,13 @@ const Progress = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Save
+                  Save Goals
                 </button>
                 <button
                   onClick={() => setIsEditingGoals(false)}
                   style={{
-                    padding: '6px 12px',
-                    fontSize: '12px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
                     fontWeight: '500',
                     color: '#c9d1d9',
                     backgroundColor: '#21262d',
@@ -189,7 +331,7 @@ const Progress = () => {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             <div>
               <label style={{ 
                 display: 'block', 
@@ -268,6 +410,36 @@ const Progress = () => {
                   {weeklyGoal.toLocaleString()} steps
                 </div>
               )}
+            </div>
+
+            
+          </div>
+        </div>
+
+        {/* Goal Achievement Stats */}
+        <div className="contribution-section" style={{ marginBottom: '20px' }}>
+          <h2 className="contribution-title" style={{ margin: '0 0 16px 0' }}>Goal Achievement</h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#58a6ff', marginBottom: '4px' }}>
+                {currentStreak}
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Day Streak</div>
+            </div>
+            
+            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#238636', marginBottom: '4px' }}>
+                {weekProgress.goalsMet}/7
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Weekly Goals Met</div>
+            </div>
+            
+            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#f0f6fc', marginBottom: '4px' }}>
+                {Math.round((weekProgress.goalsMet / 7) * 100)}%
+              </div>
+              <div style={{ fontSize: '12px', color: '#8b949e' }}>Weekly Success Rate</div>
             </div>
           </div>
         </div>
@@ -353,6 +525,8 @@ const Progress = () => {
           </div>
         </div>
 
+
+
         {/* Daily Progress Chart */}
         <div className="contribution-section">
           <h2 className="contribution-title" style={{ margin: '0 0 16px 0' }}>Daily Progress Chart</h2>
@@ -397,4 +571,4 @@ const Progress = () => {
   );
 };
 
-export default Progress; 
+export default Goals;

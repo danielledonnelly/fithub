@@ -12,6 +12,10 @@ const ACTIVITY_MODES = {
   athletic: {
     name: 'Athletic',
     thresholds: [5000, 7500, 12500, 20000]
+  },
+  goals: {
+    name: 'Goals',
+    thresholds: null // Will be calculated dynamically
   }
 };
 
@@ -30,8 +34,14 @@ function addDays(date, days) {
   return d;
 }
 
-const ContributionGraph = ({ data }) => {
+const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   const [activityMode, setActivityMode] = useState('active');
+
+  // Get daily goal from localStorage for goal-based mode, with fallback to prop
+  const getDailyGoal = () => {
+    const savedGoal = localStorage.getItem('fithub_daily_goal');
+    return savedGoal ? parseInt(savedGoal) : (propDailyGoal || 10000);
+  };
 
   // Convert data keys from Date objects to YYYY-MM-DD format
   const normalizedData = {};
@@ -72,17 +82,37 @@ const ContributionGraph = ({ data }) => {
       for (let day = 0; day < 7; day++) {
         const dateString = formatDateLocal(currentDate);
         const steps = normalizedData[dateString] || 0;
-        const thresholds = ACTIVITY_MODES[activityMode].thresholds;
+        let thresholds = ACTIVITY_MODES[activityMode].thresholds;
         let level = null;
-        if (steps > 0) {
-          if (steps < 1000) {
+        
+        // Handle goal-based mode
+        if (activityMode === 'goals') {
+          const dailyGoal = getDailyGoal();
+          if (steps === 0) {
+            level = null;
+          } else if (steps < dailyGoal * 0.5) {
             level = 0;
+          } else if (steps < dailyGoal * 0.75) {
+            level = 1;
+          } else if (steps < dailyGoal) {
+            level = 2;
+          } else if (steps < dailyGoal * 1.25) {
+            level = 3;
           } else {
-            level = 0;
-            for (let i = thresholds.length - 1; i >= 0; i--) {
-              if (steps >= thresholds[i]) {
-                level = i + 1;
-                break;
+            level = 4;
+          }
+        } else {
+          // Standard threshold-based mode
+          if (steps > 0) {
+            if (steps < 1000) {
+              level = 0;
+            } else {
+              level = 0;
+              for (let i = thresholds.length - 1; i >= 0; i--) {
+                if (steps >= thresholds[i]) {
+                  level = i + 1;
+                  break;
+                }
               }
             }
           }
@@ -122,6 +152,7 @@ const ContributionGraph = ({ data }) => {
   const weeks = generateYearData();
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const currentThresholds = ACTIVITY_MODES[activityMode].thresholds;
+  const dailyGoal = getDailyGoal();
 
   return (
     <div className="contribution-graph">
@@ -168,26 +199,53 @@ const ContributionGraph = ({ data }) => {
         <div className="contribution-legend">
           <span>Less</span>
           <div className="legend-items">
-            <div className="legend-item">
-              <div className="contribution-day level-0" />
-              <span>{`< ${currentThresholds[0].toLocaleString()}`}</span>
-            </div>
-            <div className="legend-item">
-              <div className="contribution-day level-1" />
-              <span>{`${currentThresholds[0].toLocaleString()}+`}</span>
-            </div>
-            <div className="legend-item">
-              <div className="contribution-day level-2" />
-              <span>{`${currentThresholds[1].toLocaleString()}+`}</span>
-            </div>
-            <div className="legend-item">
-              <div className="contribution-day level-3" />
-              <span>{`${currentThresholds[2].toLocaleString()}+`}</span>
-            </div>
-            <div className="legend-item">
-              <div className="contribution-day level-4" />
-              <span>{`${currentThresholds[3].toLocaleString()}+`}</span>
-            </div>
+            {activityMode === 'goals' ? (
+              <>
+                <div className="legend-item">
+                  <div className="contribution-day level-0" />
+                  <span>{`< ${Math.round(dailyGoal * 0.5).toLocaleString()}`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-1" />
+                  <span>{`${Math.round(dailyGoal * 0.5).toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-2" />
+                  <span>{`${Math.round(dailyGoal * 0.75).toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-3" />
+                  <span>{`${dailyGoal.toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-4" />
+                  <span>{`${Math.round(dailyGoal * 1.25).toLocaleString()}+`}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="legend-item">
+                  <div className="contribution-day level-0" />
+                  <span>{`< ${currentThresholds[0].toLocaleString()}`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-1" />
+                  <span>{`${currentThresholds[0].toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-2" />
+                  <span>{`${currentThresholds[1].toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-3" />
+                  <span>{`${currentThresholds[2].toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-4" />
+                  <span>{`${currentThresholds[3].toLocaleString()}+`}</span>
+                </div>
+              </>
+            )}
           </div>
           <span>More</span>
         </div>

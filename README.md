@@ -82,71 +82,30 @@ Builds the app for production to the `build` folder.
 ## Structure
 fithub/
 ```
-├── **[Project Configuration]**
-│   ├── package.json              # Frontend dependencies & scripts
-│   ├── package-lock.json         # Frontend dependency lock file
-│   ├── tailwind.config.js        # Tailwind CSS configuration
-│   ├── postcss.config.js         # PostCSS configuration
-│   ├── README.md                 # Project documentation
-│   └── .gitignore                # Git ignore rules
-│
-├── **[Frontend (React App)]**
-│   ├── public/                  # Static files served by React
-│   │   ├── index.html           # Main HTML template
-│   │   ├── manifest.json        # PWA manifest
-│   │   └── assets/
-│   │       └── thumbnail.png    # App thumbnail/logo
-│   │
-│   └── src/                     # React source code
-│       ├── index.js             # React app entry point
-│       ├── App.js               # Main app component & routing
-│       ├── index.css            # Global styles & Tailwind imports
-│       │
-│       ├── components/          # Reusable UI components
-│       │   ├── Header.js        # Navigation header
-│       │   ├── Profile.js       # Profile display component
-│       │   └── ContributionGraph.js # Step data visualization
-│       │
-│       ├── pages/               # Full page components
-│       │   ├── Dashboard.js     # Main dashboard (step tracking)
-│       │   ├── ProfilePage.js   # User profile management
-│       │   ├── Progress.js      # Progress tracking page
-│       │   ├── Community.js     # Community features page
-│       │   ├── Workouts.js      # Workouts page (legacy/future)
-│       │   ├── Terms.js         # Terms of service
-│       │   └── PrivacyPolicy.js # Privacy policy
-│       │
-│       ├── context/              # React Context for state management
-│       │   └── ProfileContext.js # User profile state
-│       │
-│       └── services/             # Frontend API services
-│           ├── StepService.js    # Step data API calls
-│
-├── Backend API (Node.js/Express)
-│   └── server/
-│       ├── index.js            # Main server entry point
-│       ├── package.json        # Backend dependencies & scripts
-│       ├── package-lock.json   # Backend dependency lock file
-│       │
-│       ├── routes/             # API route definitions
-│       │   └── stepRoutes.js   # Step tracking endpoints
-│       │
-│       ├── services/           # Business logic layer
-│       │   └── stepService.js  # Step data management service
-│       │
-│       ├── controllers/        # Request handlers (empty, ready for use)
-│       ├── models/             # Data models (empty, ready for database)
-│       ├── config/             # Configuration files
-│       └── node_modules/       # Backend dependencies
-│
-├── Development Tools
-│   └── scripts/
-│       └── generate-cert.js    # SSL certificate generation for HTTPS
-│
-└── Generated/System Files
-    ├── node_modules/           # Frontend dependencies
-    └── .git/                   # Git version control
-```
+fithub/
+├── [Frontend (React App)]
+│ ├── src/
+│ │ ├── components/            
+│ │ │ ├── Header.js            # Navigation header
+│ │ │ ├── Profile.js           # Profile display
+│ │ │ ├── ContributionGraph.js # Step visualization
+│ │ │ ├── LogStepsForm.js      # Step logging form
+│ │ │ └── ScreenshotUpload.js  # Image upload component
+│ │ ├── pages/ 
+│ │ │ ├── Dashboard.js         # Main dashboard
+│ │ │ ├── ProfilePage.js       # User profile management
+│ │ │ ├── Goals.js             # Goal setting and tracking
+│ │ │ ├── Community.js         # Community features
+│ │ │ ├── Terms.js             # Terms of service
+│ │ │ └── PrivacyPolicy.js     # Privacy policy
+│ │ ├── context/ 
+│ │ │ └── AuthContext.js       # Authentication state
+│ │ └── services/ 
+│ │ ├── AuthService.js         # Authentication API calls
+│ │ ├── StepService.js         # Step data API calls
+│ │ └── ProfileService.js      # Profile management
+│ └── public/ 
+
 
 ## Inspiration
 

@@ -17,6 +17,7 @@ const Dashboard = () => {
     avatar: ''
   });
 
+
   // Load profile from database
   useEffect(() => {
     const loadProfile = async () => {
@@ -248,10 +249,14 @@ const Dashboard = () => {
     return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
   };
 
+
+
   const calculateActiveDays = () => {
     if (!stepData || typeof stepData !== 'object') return 0;
     return Object.values(stepData).filter(steps => steps > 0).length;
   };
+
+
 
   if (loading) {
     return (
@@ -296,6 +301,8 @@ const Dashboard = () => {
           totalSteps={calculateTotalSteps()}
           onSuccess={() => window.location.reload()}
         />
+
+
         
         <div className="contribution-section">
           <div style={{ 

@@ -33,16 +33,10 @@ const Header = () => {
                   Dashboard
                 </Link>
                 <Link 
-                  to="/workouts" 
-                  className={`nav-link ${location.pathname === '/workouts' ? 'active' : ''}`}
+                  to="/goals" 
+                  className={`nav-link ${location.pathname === '/goals' ? 'active' : ''}`}
                 >
-                  Workouts
-                </Link>
-                <Link 
-                  to="/progress" 
-                  className={`nav-link ${location.pathname === '/progress' ? 'active' : ''}`}
-                >
-                  Progress
+                  Goals
                 </Link>
                 <Link 
                   to="/community" 
