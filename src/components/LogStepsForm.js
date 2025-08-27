@@ -87,36 +87,7 @@ const LogStepsForm = ({ onSuccess }) => {
       <button
         type="submit"
         disabled={loading}
-        style={{
-          marginTop: '4px',
-          padding: '8px 12px',
-          backgroundColor: '#BB1F21',
-          color: '#ffffff',
-          border: '1px solid #BB1F21',
-          borderRadius: '4px',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          fontSize: '11px',
-          fontWeight: '600',
-          transition: 'all 0.2s ease',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          height: '32px'
-        }}
-        onMouseEnter={(e) => {
-          if (!loading) {
-            e.target.style.backgroundColor = '#a01a1c';
-            e.target.style.borderColor = '#a01a1c';
-            e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.15)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!loading) {
-            e.target.style.backgroundColor = '#BB1F21';
-            e.target.style.borderColor = '#BB1F21';
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-          }
-        }}
+        className="mt-1 px-3 py-2 bg-fithub-bright-red text-white rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed text-xs font-semibold h-8 border-0 outline-none"
       >
         {loading ? 'Logging...' : 'Log Steps'}
       </button>

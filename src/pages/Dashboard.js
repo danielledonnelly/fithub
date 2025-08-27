@@ -317,18 +317,7 @@ const Dashboard = () => {
               <button
                 onClick={handleRefreshFitbitData}
                 disabled={loading}
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  color: '#ffffff',
-                  backgroundColor: '#00A085',
-                  border: '1px solid #00A085',
-                  borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1,
-                  transition: 'all 0.2s'
-                }}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
               >
                 {loading ? 'Syncing...' : 'Sync Fitbit'}
               </button>

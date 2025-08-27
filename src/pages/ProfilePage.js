@@ -274,15 +274,7 @@ const ProfilePage = () => {
         </p>
 
         {saveMessage && (
-          <div style={{
-            padding: '12px 16px',
-            backgroundColor: '#BB1F21',
-            border: '1px solid #BB1F21',
-            borderRadius: '6px',
-            color: '#ffffff',
-            marginBottom: '20px',
-            fontSize: '14px'
-          }}>
+          <div className="px-3 py-3 bg-fithub-bright-red border border-fithub-bright-red rounded-md text-white mb-5 text-sm">
             {saveMessage}
           </div>
         )}
@@ -293,25 +285,7 @@ const ProfilePage = () => {
             {!isEditing && (
               <button 
                 onClick={() => setIsEditing(true)}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#ffffff',
-                  backgroundColor: '#BB1F21',
-                  border: '1px solid #BB1F21',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#921E21';
-                  e.target.style.borderColor = '#921E21';
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#BB1F21';
-                  e.target.style.borderColor = '#BB1F21';
-                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
               >
                 Edit Profile
               </button>
@@ -458,25 +432,7 @@ const ProfilePage = () => {
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                 <button 
                   onClick={handleSave}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#ffffff',
-                    backgroundColor: '#BB1F21',
-                    border: '1px solid #BB1F21',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.backgroundColor = '#921E21';
-                    e.target.style.borderColor = '#921E21';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.backgroundColor = '#BB1F21';
-                    e.target.style.borderColor = '#BB1F21';
-                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
                 >
                   Save Changes
                 </button>
@@ -549,30 +505,7 @@ const ProfilePage = () => {
                   <button
                     onClick={handleConnectFitbit}
                     disabled={fitbitLoading}
-                    style={{
-                      padding: '8px 16px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#ffffff',
-                      backgroundColor: '#00C9A7',
-                      border: '1px solid #00C9A7',
-                      borderRadius: '6px',
-                      cursor: fitbitLoading ? 'not-allowed' : 'pointer',
-                      opacity: fitbitLoading ? 0.6 : 1,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                      if (!fitbitLoading) {
-                        e.target.style.backgroundColor = '#00A085';
-                        e.target.style.borderColor = '#00A085';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (!fitbitLoading) {
-                        e.target.style.backgroundColor = '#00C9A7';
-                        e.target.style.borderColor = '#00C9A7';
-                      }
-                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
                   >
                     {fitbitLoading ? 'Loading...' : 'Connect Fitbit'}
                   </button>
@@ -584,25 +517,7 @@ const ProfilePage = () => {
 
                     <button
                       onClick={handleDisconnectFitbit}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        color: '#ffffff',
-                        backgroundColor: '#dc3545',
-                        border: '1px solid #dc3545',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={(e) => {
-                        e.target.style.backgroundColor = '#c82333';
-                        e.target.style.borderColor = '#c82333';
-                      }}
-                      onMouseOut={(e) => {
-                        e.target.style.backgroundColor = '#dc3545';
-                        e.target.style.borderColor = '#dc3545';
-                      }}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-dark-red rounded cursor-pointer hover:bg-fithub-brown border-0 outline-none"
                     >
                       Disconnect
                     </button>

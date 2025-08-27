@@ -3,15 +3,15 @@ import React, { useState } from 'react';
 const ACTIVITY_MODES = {
   sedentary: {
     name: 'Sedentary',
-    thresholds: [1000, 2500, 4000, 6000]
+    thresholds: [2500, 4000, 6000]
   },
   active: {
     name: 'Active',
-    thresholds: [3000, 5000, 7500, 10000]
+    thresholds: [5000, 7500, 10000]
   },
   athletic: {
     name: 'Athletic',
-    thresholds: [5000, 7500, 12500, 20000]
+    thresholds: [7500, 12500, 20000]
   },
   goals: {
     name: 'Goals',
@@ -101,29 +101,23 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
           const dailyGoal = getDailyGoal();
           if (steps === 0) {
             level = null;
-          } else if (steps < dailyGoal * 0.5) {
-            level = 0;
           } else if (steps < dailyGoal * 0.75) {
-            level = 1;
+            level = 0;
           } else if (steps < dailyGoal) {
-            level = 2;
+            level = 1;
           } else if (steps < dailyGoal * 1.25) {
-            level = 3;
+            level = 2;
           } else {
-            level = 4;
+            level = 3;
           }
         } else {
           // Standard threshold-based mode
           if (steps > 0) {
-            if (steps < 1000) {
-              level = 0;
-            } else {
-              level = 0;
-              for (let i = thresholds.length - 1; i >= 0; i--) {
-                if (steps >= thresholds[i]) {
-                  level = i + 1;
-                  break;
-                }
+            level = 0;
+            for (let i = thresholds.length - 1; i >= 0; i--) {
+              if (steps >= thresholds[i]) {
+                level = i + 1;
+                break;
               }
             }
           }
@@ -232,23 +226,19 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
               <>
                 <div className="legend-item">
                   <div className="contribution-day level-0" />
-                  <span>{`< ${Math.round(dailyGoal * 0.5).toLocaleString()}`}</span>
+                  <span>{`< ${Math.round(dailyGoal * 0.75).toLocaleString()}`}</span>
                 </div>
                 <div className="legend-item">
                   <div className="contribution-day level-1" />
-                  <span>{`${Math.round(dailyGoal * 0.5).toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-2" />
-                  <span>{`${Math.round(dailyGoal * 0.75).toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-3" />
                   <span>{`${dailyGoal.toLocaleString()}+`}</span>
                 </div>
                 <div className="legend-item">
-                  <div className="contribution-day level-4" />
+                  <div className="contribution-day level-2" />
                   <span>{`${Math.round(dailyGoal * 1.25).toLocaleString()}+`}</span>
+                </div>
+                <div className="legend-item">
+                  <div className="contribution-day level-3" />
+                  <span>{`${Math.round(dailyGoal * 1.5).toLocaleString()}+`}</span>
                 </div>
               </>
             ) : (
@@ -268,10 +258,6 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
                 <div className="legend-item">
                   <div className="contribution-day level-3" />
                   <span>{`${currentThresholds[2].toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-4" />
-                  <span>{`${currentThresholds[3].toLocaleString()}+`}</span>
                 </div>
               </>
             )}
