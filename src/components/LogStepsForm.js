@@ -27,14 +27,10 @@ const LogStepsForm = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: '1' }}>
-          <label style={{
-            fontSize: '11px',
-            fontWeight: '600',
-            color: '#f0f6fc'
-          }}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
+      <div className="flex flex-row gap-2">
+        <div className="flex flex-col gap-0.5 flex-1">
+          <label className="text-xs font-semibold text-gray-100">
             Date
           </label>
           <input
@@ -42,26 +38,12 @@ const LogStepsForm = ({ onSuccess }) => {
             value={date}
             onChange={e => setDate(e.target.value)}
             required
-            style={{
-              padding: '8px 6px',
-              backgroundColor: '#0d1117',
-              border: '1px solid #30363d',
-              borderRadius: '4px',
-              color: '#8b949e',
-              fontSize: '11px',
-              width: '100%',
-              colorScheme: 'dark',
-              height: '32px'
-            }}
+            className="px-1.5 py-2 bg-fithub-dark-grey border border-fithub-medium-grey rounded text-gray-400 text-xs w-full h-8 border-0 outline-none focus:outline-none focus:ring-0"
           />
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: '1' }}>
-          <label style={{
-            fontSize: '11px',
-            fontWeight: '600',
-            color: '#f0f6fc'
-          }}>
+        <div className="flex flex-col gap-0.5 flex-1">
+          <label className="text-xs font-semibold text-gray-100">
             Steps
           </label>
           <input
@@ -70,16 +52,7 @@ const LogStepsForm = ({ onSuccess }) => {
             onChange={e => setSteps(e.target.value)}
             min="0"
             required
-            style={{
-              padding: '8px 6px',
-              backgroundColor: '#0d1117',
-              border: '1px solid #30363d',
-              borderRadius: '4px',
-              color: '#c9d1d9',
-              fontSize: '11px',
-              width: '100%',
-              height: '32px'
-            }}
+            className="px-1.5 py-2 bg-fithub-dark-grey border border-fithub-medium-grey rounded text-gray-300 text-xs w-full h-8 border-0 outline-none focus:outline-none focus:ring-0"
           />
         </div>
       </div>
@@ -93,14 +66,7 @@ const LogStepsForm = ({ onSuccess }) => {
       </button>
       
       {error && (
-        <div style={{ 
-          color: '#f85149', 
-          fontSize: '11px',
-          padding: '4px 6px',
-          backgroundColor: '#da3633',
-          border: '1px solid #f85149',
-          borderRadius: '4px'
-        }}>
+        <div className="text-red-400 text-xs px-1.5 py-1 bg-red-900 border border-red-400 rounded">
           {error}
         </div>
       )}

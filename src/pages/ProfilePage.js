@@ -12,9 +12,10 @@ const ProfilePage = () => {
     bio: '',
     avatar: ''
   });
-  const [isEditing, setIsEditing] = useState(false);
+
   const [saveMessage, setSaveMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [fitbitStatus, setFitbitStatus] = useState({
     connected: false,
@@ -106,28 +107,38 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      const updatedProfile = await ProfileService.updateProfile(formData);
-      setProfile(updatedProfile);
-      setIsEditing(false);
-      setSaveMessage('Profile updated successfully!');
-      setTimeout(() => setSaveMessage(''), 3000);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setSaveMessage('Failed to update profile. Please try again.');
-      setTimeout(() => setSaveMessage(''), 3000);
-    }
-  };
+  // Auto-save function with debouncing
+  const autoSave = React.useCallback(
+    React.useMemo(() => {
+      let timeoutId;
+      return (data) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(async () => {
+          try {
+            setSaving(true);
+            const updatedProfile = await ProfileService.updateProfile(data);
+            setProfile(updatedProfile);
+          } catch (error) {
+            console.error('Error auto-saving profile:', error);
+            setSaveMessage('Failed to auto-save. Please try again.');
+            setTimeout(() => setSaveMessage(''), 3000);
+          } finally {
+            setSaving(false);
+          }
+        }, 1000); // Wait 1 second after user stops typing
+      };
+    }, []),
+    []
+  );
 
-  const handleCancel = () => {
-    setFormData({
-      name: profile.name,
-      bio: profile.bio,
-      avatar: profile.avatar
-    });
-    setIsEditing(false);
-  };
+  // Auto-save when formData changes
+  React.useEffect(() => {
+    if (!loading && (formData.name !== profile.name || formData.bio !== profile.bio || formData.avatar !== profile.avatar)) {
+      autoSave(formData);
+    }
+  }, [formData, profile, loading, autoSave]);
+
+
 
     // Handle Fitbit connection
   const handleConnectFitbit = async () => {
@@ -278,190 +289,91 @@ const ProfilePage = () => {
             {saveMessage}
           </div>
         )}
-
+        
         <div className="contribution-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 className="contribution-title" style={{ margin: 0 }}>Profile Information</h2>
-            {!isEditing && (
-              <button 
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
-              >
-                Edit Profile
-              </button>
-            )}
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="contribution-title m-0">Profile Information</h2>
           </div>
 
-          <div style={{ display: 'grid', gap: '20px', maxWidth: '500px' }}>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+          <div className="grid gap-5 max-w-4xl">
+            <div className="flex gap-8 items-start">
               <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#f0f6fc' 
-                }}>
+                <label className="block mb-2 text-base font-medium text-gray-100">
                   Avatar
                 </label>
-                {isEditing ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div 
+                    className="w-16 h-16 flex items-center justify-center text-2xl text-gray-500 bg-gray-600 border border-gray-600 rounded-full overflow-hidden cursor-pointer hover:bg-gray-500 transition-colors"
+                    onClick={() => document.getElementById('avatar-upload').click()}
+                  >
+                    {formData.avatar && formData.avatar.startsWith('data:') ? (
+                      <img 
+                        src={formData.avatar} 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className="w-full h-full flex items-center justify-center text-2xl text-gray-500 bg-gray-600">
+                      {formData.avatar && !formData.avatar.startsWith('data:') ? formData.avatar : '?'}
+                    </div>
+                  </div>
                   <input
-                    type="text"
+                    id="avatar-upload"
+                    type="file"
                     name="avatar"
-                    value={formData.avatar}
-                    onChange={handleInputChange}
-                    maxLength="1"
-                    style={{
-                      width: '60px',
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      backgroundColor: '#0d1117',
-                      border: '1px solid #30363d',
-                      borderRadius: '6px',
-                      color: '#c9d1d9',
-                      outline: 'none',
-                      textAlign: 'center'
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            avatar: event.target.result
+                          }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
                     }}
                   />
-                ) : (
-                  <div style={{ 
-                    width: '60px',
-                    height: '60px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    color: '#7d8590',
-                    backgroundColor: '#30363d',
-                    border: '1px solid #30363d',
-                    borderRadius: '50%'
-                  }}>
-                    {profile.avatar}
-                  </div>
-                )}
+                </div>
+              </div>
+              
+              <div style={{ flex: '0 0 200px' }}>
+                <label className="block mb-2 text-base font-medium text-gray-100">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-medium-grey rounded-md text-gray-300 outline-none border-0 focus:outline-none focus:ring-0"
+                />
               </div>
               
               <div style={{ flex: '1' }}>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '8px', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#f0f6fc' 
-                }}>
-                  Display Name
+                <label className="block mb-2 text-base font-medium text-gray-100">
+                  Bio
                 </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      fontSize: '14px',
-                      backgroundColor: '#0d1117',
-                      border: '1px solid #30363d',
-                      borderRadius: '6px',
-                      color: '#c9d1d9',
-                      outline: 'none'
-                    }}
-                  />
-                ) : (
-                  <div style={{ 
-                    padding: '8px 12px', 
-                    fontSize: '14px', 
-                    color: '#c9d1d9',
-                    backgroundColor: '#161b22',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px'
-                  }}>
-                    {profile.name}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#f0f6fc' 
-              }}>
-                Bio
-              </label>
-              {isEditing ? (
                 <textarea
                   name="bio"
                   value={formData.bio}
                   onChange={handleInputChange}
-                  rows="3"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none',
-                    resize: 'vertical'
-                  }}
+                  rows="1"
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-medium-grey rounded-md text-gray-300 outline-none resize-y border-0 focus:outline-none focus:ring-0"
                 />
-              ) : (
-                <div style={{ 
-                  padding: '8px 12px', 
-                  fontSize: '14px', 
-                  color: '#c9d1d9',
-                  backgroundColor: '#161b22',
-                  border: '1px solid #30363d',
-                  borderRadius: '6px',
-                  minHeight: '60px'
-                }}>
-                  {profile.bio}
-                </div>
-              )}
+              </div>
             </div>
 
 
 
-            {isEditing && (
-              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                <button 
-                  onClick={handleSave}
-                  className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
-                >
-                  Save Changes
-                </button>
-                <button 
-                  onClick={handleCancel}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#c9d1d9',
-                    backgroundColor: '#21262d',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.backgroundColor = '#30363d';
-                    e.target.style.borderColor = '#8b949e';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.backgroundColor = '#21262d';
-                    e.target.style.borderColor = '#30363d';
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+
 
             
           </div>
