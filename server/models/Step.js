@@ -4,7 +4,7 @@ const {pool} = require('../db');
 class StepModel {
   // Get all steps for a user with optional date filtering
   static async getAllSteps(userId, startDate = null, endDate = null) {
-    let query = 'SELECT date, steps FROM steps WHERE user_id = ?';
+    let query = 'SELECT date, inputted_steps, fitbit_steps, (inputted_steps + fitbit_steps) as total_steps FROM steps WHERE user_id = ?';
     const params = [userId];
     
     if (startDate) {
@@ -24,7 +24,7 @@ class StepModel {
     const stepData = {};
     rows.forEach(row => {
       // row.date is now a string in 'YYYY-MM-DD' format
-      stepData[row.date] = row.steps;
+      stepData[row.date] = row.total_steps;
     });
     
     return stepData;
@@ -33,29 +33,30 @@ class StepModel {
   // Get steps for a specific date
   static async getStepsByDate(userId, date) {
     const [rows] = await pool.query(
-      'SELECT steps FROM steps WHERE user_id = ? AND date = ?',
+      'SELECT inputted_steps, fitbit_steps, (inputted_steps + fitbit_steps) as total_steps FROM steps WHERE user_id = ? AND date = ?',
       [userId, date]
     );
-    return rows.length > 0 ? rows[0].steps : 0;
+    return rows.length > 0 ? rows[0].total_steps : 0;
   }
 
-  // Update or insert steps for a specific date
+  // Update or insert inputted steps for a specific date
   static async updateSteps(userId, date, steps) {
-    // Fetch current steps for this user/date
-    const [rows] = await pool.query(
-      'SELECT steps FROM steps WHERE user_id = ? AND date = ?',
-      [userId, date]
-    );
-    console.log('Updating steps:', { userId, date, steps, found: rows.length > 0, current: rows[0]?.steps });
-    let newTotal = steps;
-    if (rows.length > 0) {
-      newTotal += rows[0].steps;
-    }
+    console.log('Updating inputted steps:', { userId, date, steps });
     const [result] = await pool.query(
-      'INSERT INTO steps (user_id, date, steps) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE steps = ?',
-      [userId, date, newTotal, newTotal]
+      'INSERT INTO steps (user_id, date, inputted_steps) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE inputted_steps = ?',
+      [userId, date, steps, steps]
     );
-    return { date, steps: newTotal };
+    return { date, steps };
+  }
+
+  // Update or insert Fitbit steps for a specific date (overwrites existing Fitbit steps)
+  static async updateFitbitSteps(userId, date, steps) {
+    console.log('Updating Fitbit steps:', { userId, date, steps });
+    const [result] = await pool.query(
+      'INSERT INTO steps (user_id, date, fitbit_steps) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE fitbit_steps = ?',
+      [userId, date, steps, steps]
+    );
+    return { date, steps };
   }
 
   // Delete steps for a specific date
@@ -69,7 +70,7 @@ class StepModel {
 
   // Get step statistics
   static async getStepStats(userId, startDate = null, endDate = null) {
-    let query = 'SELECT COUNT(*) as totalDays, SUM(steps) as totalSteps, COUNT(CASE WHEN steps > 0 THEN 1 END) as activeDays, AVG(steps) as avgSteps, MAX(steps) as maxSteps, MIN(steps) as minSteps FROM steps WHERE user_id = ?';
+    let query = 'SELECT COUNT(*) as totalDays, SUM(inputted_steps + fitbit_steps) as totalSteps, COUNT(CASE WHEN (inputted_steps + fitbit_steps) > 0 THEN 1 END) as activeDays, AVG(inputted_steps + fitbit_steps) as avgSteps, MAX(inputted_steps + fitbit_steps) as maxSteps, MIN(inputted_steps + fitbit_steps) as minSteps FROM steps WHERE user_id = ?';
     const params = [userId];
     
     if (startDate) {

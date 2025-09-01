@@ -39,34 +39,18 @@ const ScreenshotUpload = ({ onSuccess }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div>
-        <h3 style={{
-          fontSize: '14px',
-          fontWeight: '600',
-          color: '#f0f6fc',
-          margin: '0 0 6px 0'
-        }}>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-0.5">
+        <h3 className="text-sm font-semibold text-gray-100 m-0">
           Upload Screenshot
         </h3>
-        <p style={{
-          fontSize: '12px',
-          color: '#8b949e',
-          margin: '0 0 8px 0',
-          lineHeight: '1.3'
-        }}>
+        <p className="text-xs text-gray-400">
           Upload a screenshot of your fitness app to automatically extract step count.
         </p>
       </div>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <label style={{
-          fontSize: '12px',
-          fontWeight: '600',
-          color: '#f0f6fc'
-        }}>
-          Screenshot
-        </label>
+      <div className="flex flex-col gap-0.5">
+
         <div style={{
           position: 'relative',
           display: 'inline-block',

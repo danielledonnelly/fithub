@@ -211,6 +211,8 @@ code {
   flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
+  transform: scale(0.8);  
+  transform-origin: top left;
 }
 
 .contribution-months {
@@ -226,7 +228,7 @@ code {
 }
 
 .month-label {
-  font-size: 14px;
+  font-size: 16px;
   color: #7d8590;
   text-align: center;
   flex: 1;
@@ -248,7 +250,7 @@ code {
 }
 
 .day-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #7d8590;
   text-align: right;
   padding-right: 6px;
@@ -322,7 +324,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 32px;
+  gap: 48px;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #30363d;
@@ -332,7 +334,7 @@ code {
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 12px;
+  font-size: 14px;
   color: #7d8590;
 }
 
@@ -350,14 +352,14 @@ code {
 }
 
 .legend-item span {
-  font-size: 11px;
+  font-size: 16px;
   color: #7d8590;
   white-space: nowrap; /* Prevent wrapping of numbers */
 }
 
 .legend-item .contribution-day {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   padding-bottom: 0;
   position: static;
 }
@@ -368,8 +370,8 @@ code {
 }
 
 .mode-button {
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #c9d1d9;
   background-color: #21262d;

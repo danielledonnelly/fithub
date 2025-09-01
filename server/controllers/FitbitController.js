@@ -214,7 +214,7 @@ class FitbitController {
       const StepModel = require('../models/Step');
       for (const [date, steps] of Object.entries(stepData)) {
         if (steps > 0) {
-          await StepModel.updateSteps(userId, date, steps);
+          await StepModel.updateFitbitSteps(userId, date, steps);
         }
       }
 

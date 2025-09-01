@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const ACTIVITY_MODES = {
   sedentary: {
@@ -48,39 +48,46 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   };
 
   // Convert data keys from Date objects to YYYY-MM-DD format
-  const normalizedData = {};
-  if (data && typeof data === 'object') {
-    Object.keys(data).forEach(key => {
-      try {
-        // Parse the date key and convert to YYYY-MM-DD format using local time
-        const date = new Date(key);
-        if (!isNaN(date.getTime())) {
-          const dateString = formatDateLocal(date);
-          normalizedData[dateString] = data[key];
+  const normalizedData = useMemo(() => {
+    const result = {};
+    if (data && typeof data === 'object') {
+      Object.keys(data).forEach(key => {
+        try {
+          // Parse the date key and convert to YYYY-MM-DD format using local time
+          const date = new Date(key);
+          if (!isNaN(date.getTime())) {
+            const dateString = formatDateLocal(date);
+            result[dateString] = data[key];
+          }
+        } catch (e) {
+          // If key is already in YYYY-MM-DD format, use it as is
+          if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            result[key] = data[key];
+          }
         }
-      } catch (e) {
-        // If key is already in YYYY-MM-DD format, use it as is
-        if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          normalizedData[key] = data[key];
-        }
-      }
-    });
-  }
+      });
+    }
+    return result;
+  }, [data]);
 
   // Calculate the start date (January 1st of current year)
   // Use local time to ensure we get the correct current date
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const startDate = new Date(currentYear, 0, 1); // January 1st of current year
-  const startDay = startDate.getDay();
-  const adjustedStartDate = addDays(startDate, -startDay); // Go back to previous Sunday for grid alignment
+  const { today, currentYear, startDate, adjustedStartDate, numWeeks, totalDays } = useMemo(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const startDate = new Date(currentYear, 0, 1); // January 1st of current year
+    const startDay = startDate.getDay();
+    const adjustedStartDate = addDays(startDate, -startDay); // Go back to previous Sunday for grid alignment
 
-  // Calculate the number of days to display (from January 1st to today, inclusive)
-  const totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  
-  // Calculate weeks needed to include the current week
-  const daysFromAdjustedStart = Math.ceil((today - adjustedStartDate) / (1000 * 60 * 60 * 24)) + 1;
-  const numWeeks = Math.ceil(daysFromAdjustedStart / 7);
+    // Calculate the number of days to display (from January 1st to today, inclusive)
+    const totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Calculate weeks needed to include the current week
+    const daysFromAdjustedStart = Math.ceil((today - adjustedStartDate) / (1000 * 60 * 60 * 24)) + 1;
+    const numWeeks = Math.ceil(daysFromAdjustedStart / 7);
+    
+    return { today, currentYear, startDate, adjustedStartDate, numWeeks, totalDays };
+  }, []); // Only calculate once per day
   
   // Note: We use adjustedStartDate for grid alignment, but actual data starts from January 1st
 
@@ -158,21 +165,12 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
     }
   };
 
-  const weeks = generateYearData();
+  const weeks = useMemo(() => generateYearData(), [normalizedData, activityMode, today, currentYear, startDate, adjustedStartDate, numWeeks]);
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const currentThresholds = ACTIVITY_MODES[activityMode].thresholds;
   const dailyGoal = getDailyGoal();
   
-  // Debug: Log current dates for troubleshooting
-  console.log('Debug dates:', {
-    today: today.toISOString().split('T')[0],
-    currentYear,
-    startDate: startDate.toISOString().split('T')[0],
-    adjustedStartDate: adjustedStartDate.toISOString().split('T')[0],
-    totalDays,
-    numWeeks,
-    daysFromAdjustedStart: Math.ceil((today - adjustedStartDate) / (1000 * 60 * 60 * 24)) + 1
-  });
+
 
   return (
     <div className="contribution-graph">
@@ -280,4 +278,4 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   );
 };
 
-export default ContributionGraph; 
+export default React.memo(ContributionGraph); 

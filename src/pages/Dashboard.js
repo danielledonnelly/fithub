@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ContributionGraph from '../components/ContributionGraph';
 import Profile from '../components/Profile';
 import StepService from '../services/StepService';
@@ -50,43 +50,7 @@ const Dashboard = () => {
           setError(null);
         }
         
-        // Try to get combined step data (local + Fitbit) first
-        const token = localStorage.getItem('fithub_token');
-        if (token) {
-          try {
-            // First check if Fitbit is connected
-            const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            if (statusResponse.ok) {
-              const status = await statusResponse.json();
-              if (status.connected) {
-                // Fitbit is connected, try to get combined data
-                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
-                
-                if (response.ok) {
-                  const result = await response.json();
-                  if (mounted) {
-                    setStepData(result.steps);
-                    console.log('Using combined step data:', result.source);
-                  }
-                  return;
-                }
-              }
-            }
-          } catch (fitbitError) {
-            console.log('Fitbit data not available, falling back to local data');
-          }
-        }
-        
-        // Fallback to local step data
+        // Just load local step data - no auto-syncing
         const data = await StepService.getAllSteps();
         if (mounted) {
           setStepData(data);
@@ -244,17 +208,15 @@ const Dashboard = () => {
     }
   };
 
-  const calculateTotalSteps = () => {
+  const totalSteps = useMemo(() => {
     if (!stepData || typeof stepData !== 'object') return 0;
     return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
-  };
+  }, [stepData]);
 
-
-
-  const calculateActiveDays = () => {
+  const activeDays = useMemo(() => {
     if (!stepData || typeof stepData !== 'object') return 0;
     return Object.values(stepData).filter(steps => steps > 0).length;
-  };
+  }, [stepData]);
 
 
 
@@ -296,9 +258,9 @@ const Dashboard = () => {
 
         <Profile 
           profile={profile}
-          totalWorkouts={calculateActiveDays()}
+          totalWorkouts={activeDays}
           currentStreak={0}
-          totalSteps={calculateTotalSteps()}
+          totalSteps={totalSteps}
           onSuccess={() => window.location.reload()}
         />
 
@@ -324,7 +286,7 @@ const Dashboard = () => {
             </div>
           </div>
           <p className="contribution-subtitle" style={{ maxWidth: '100%' }}>
-            {calculateActiveDays()} active days in the last year
+            {activeDays} active days in the last year
           </p>
           
           <ContributionGraph 
