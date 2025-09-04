@@ -674,6 +674,7 @@ class FitbitController {
 
       console.log(`Aggressive sync: ${daysToSync.length} days to process`);
       console.log(`Date range: ${daysToSync[daysToSync.length-1]?.toISOString().split('T')[0]} to ${daysToSync[0]?.toISOString().split('T')[0]}`);
+      console.log(`Existing steps count: ${Object.keys(existingSteps).length}`);
 
       for (let i = 0; i < daysToSync.length && !rateLimitHit; i += BATCH_SIZE) {
         // Check if we've exceeded max sync time
@@ -693,11 +694,13 @@ class FitbitController {
           try {
             const dayData = await fitbitService.getStepData(day);
             if (dayData.steps > 0) {
-              stepData[dayData.date] = dayData.steps;
+              // Ensure date is in YYYY-MM-DD format
+              const dateStr = dayData.date || day.toISOString().split('T')[0];
+              stepData[dateStr] = dayData.steps;
               syncedCount++;
-              console.log(`Synced ${dayData.date}: ${dayData.steps} steps`);
+              console.log(`Synced ${dateStr}: ${dayData.steps} steps`);
             }
-            return { success: true, date: dayData.date };
+            return { success: true, date: dayData.date || day.toISOString().split('T')[0] };
           } catch (error) {
             if (error.message && error.message.includes('429')) {
               console.log(`Rate limit hit for ${day.toISOString().split('T')[0]} - stopping sync`);
@@ -709,7 +712,15 @@ class FitbitController {
           }
         });
 
-        await Promise.all(batchPromises);
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Check if any request in this batch hit rate limit
+        const rateLimitInBatch = batchResults.some(result => result.rateLimit);
+        if (rateLimitInBatch) {
+          rateLimitHit = true;
+          console.log('Rate limit detected in batch - stopping sync');
+          break; // Exit the loop immediately
+        }
         
         // Add delay between batches to respect rate limits
         if (!rateLimitHit && i + BATCH_SIZE < daysToSync.length) {
@@ -718,9 +729,12 @@ class FitbitController {
       }
 
       // Save to database
+      console.log(`Saving ${Object.keys(stepData).length} days of step data to database`);
       for (const [date, steps] of Object.entries(stepData)) {
+        console.log(`Saving ${date}: ${steps} steps`);
         await StepModel.updateFitbitSteps(userId, date, steps);
       }
+      console.log('Database save completed');
 
       // Update last sync time and rate limit status
       let nextSyncTime = null;
@@ -741,6 +755,9 @@ class FitbitController {
 
       // Get all steps (including existing data)
       const allSteps = await StepModel.getAllSteps(userId);
+
+      console.log(`Sync completed: ${syncedCount} days synced, ${Object.keys(stepData).length} days in stepData object`);
+      console.log(`Total steps in database after sync: ${Object.keys(allSteps).length}`);
 
       let message = `Synced ${syncedCount} days of step data`;
       if (rateLimitHit) {

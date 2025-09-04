@@ -63,18 +63,11 @@ const Dashboard = () => {
     }
   }, [rateLimited, syncStatus]);
 
-  // Load data from backend API with auto-sync
+  // Load existing data first, then auto-sync in background
   useEffect(() => {
     let mounted = true;
 
-    const fetchStepDataWithAutoSync = async () => {
-      // Don't run if already tried sync or rate limited
-      if (hasTriedSync || rateLimited) {
-        console.log('Already tried sync or rate limited - skipping fetch');
-        return;
-      }
-      
-      setHasTriedSync(true);
+    const loadDataAndSync = async () => {
       try {
         if (mounted) {
           setStepDataLoading(true);
@@ -87,12 +80,40 @@ const Dashboard = () => {
           const data = await StepService.getAllSteps();
           if (mounted) {
             setStepData(data);
+            setStepDataLoading(false);
           }
           return;
         }
 
-        // Try auto-sync first (if Fitbit is connected and not rate limited)
-        if (!rateLimited) {
+        // First, load existing data immediately
+        try {
+          const existingDataResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (existingDataResponse.ok) {
+            const existingData = await existingDataResponse.json();
+            if (mounted) {
+              setStepData(existingData);
+              setStepDataLoading(false); // Show existing data immediately
+            }
+          }
+        } catch (existingDataError) {
+          console.log('Could not load existing data, falling back to local');
+          const data = await StepService.getAllSteps();
+          if (mounted) {
+            setStepData(data);
+            setStepDataLoading(false);
+          }
+        }
+
+        // Then try auto-sync in background (if not already tried or rate limited)
+        if (!hasTriedSync && !rateLimited) {
+          setHasTriedSync(true);
+          console.log('Starting background auto-sync...');
+          
           try {
             const autoSyncResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/auto-sync`, {
               headers: {
@@ -103,59 +124,42 @@ const Dashboard = () => {
             if (autoSyncResponse.ok) {
               const autoSyncResult = await autoSyncResponse.json();
               if (mounted) {
-                setStepData(autoSyncResult.steps);
                 setSyncStatus(autoSyncResult);
                 
-                // Check if we're rate limited (either from response or message)
+                // Check if we're rate limited
                 if (autoSyncResult.rateLimitHit || (autoSyncResult.message && autoSyncResult.message.includes('Rate limit timeout'))) {
                   console.log('Rate limited - stopping auto-sync attempts');
                   setRateLimited(true);
-                  setStepDataLoading(false);
                   return;
                 }
                 
                 if (autoSyncResult.synced) {
                   console.log('Auto-sync completed:', autoSyncResult.message);
-                  // Auto-refresh the page data after successful sync
-                  setTimeout(() => {
-                    if (mounted) {
-                      window.location.reload();
-                    }
-                  }, 2000);
+                  // Update the step data with new data
+                  setStepData(autoSyncResult.steps);
                 } else {
                   console.log('Auto-sync status:', autoSyncResult.message);
+                  // Even if no sync happened, update with current data
+                  if (autoSyncResult.steps) {
+                    setStepData(autoSyncResult.steps);
+                  }
                 }
               }
-              return;
             }
           } catch (autoSyncError) {
-            console.log('Auto-sync not available, falling back to local data');
+            console.log('Auto-sync not available');
           }
-        } else {
-          console.log('Rate limited - skipping auto-sync');
-          setStepDataLoading(false);
-          return;
-        }
-
-        // Fallback to local data
-        const data = await StepService.getAllSteps();
-        if (mounted) {
-          setStepData(data);
         }
       } catch (error) {
-        console.error('Failed to fetch step data:', error);
+        console.error('Error in loadDataAndSync:', error);
         if (mounted) {
-          setError('Failed to load step data. Please make sure the server is running.');
-          setStepData({});
-        }
-      } finally {
-        if (mounted) {
+          setError('Failed to load step data');
           setStepDataLoading(false);
         }
       }
     };
 
-    fetchStepDataWithAutoSync();
+    loadDataAndSync();
 
     // Cleanup function - sets mounted to false when component unmounts
     return () => {
@@ -260,6 +264,12 @@ const Dashboard = () => {
         {syncStatus && syncStatus.synced && !syncStatus.rateLimitHit && (
           <div className="px-3 py-2 bg-green-600 border border-green-400 rounded text-white mb-5 text-sm">
             Auto-sync complete: {syncStatus.message}
+          </div>
+        )}
+
+        {syncStatus && !syncStatus.synced && !syncStatus.rateLimitHit && (
+          <div className="px-3 py-2 bg-blue-600 border border-blue-400 rounded text-white mb-5 text-sm">
+            Background sync in progress: {syncStatus.message}
           </div>
         )}
 
