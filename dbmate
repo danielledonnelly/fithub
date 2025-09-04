@@ -1,0 +1,5 @@
+# Database URL for dbmate
+DATABASE_URL="mysql://root:your_mysql_password@localhost:3306/fithub"
+
+# Migrations directory
+MIGRATIONS_DIR="./server/db/migrations"

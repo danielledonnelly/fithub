@@ -10,8 +10,11 @@ import ScreenshotUpload from '../components/ScreenshotUpload';
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
   const [loading, setLoading] = useState(true);
-  const [fitbitSyncing, setFitbitSyncing] = useState(false);
+  const [stepDataLoading, setStepDataLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [hasTriedSync, setHasTriedSync] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
     bio: '',
@@ -34,24 +37,107 @@ const Dashboard = () => {
           bio: '',
           avatar: ''
         });
+      } finally {
+        // Dashboard is ready to show once profile is loaded
+        setLoading(false);
       }
     };
 
     loadProfile();
   }, []);
 
-  // Load data from backend API
+  // Check if rate limit has expired
+  useEffect(() => {
+    if (rateLimited && syncStatus && syncStatus.message && syncStatus.message.includes('Rate limit timeout')) {
+      // Extract the next attempt time from the message
+      const match = syncStatus.message.match(/Next sync in (\d+) minutes/);
+      if (match) {
+        const minutes = parseInt(match[1]);
+        console.log(`Rate limit expires in ${minutes} minutes`);
+        // Reset rate limit state after the timeout period
+        setTimeout(() => {
+          setRateLimited(false);
+          console.log('Rate limit expired - auto-sync will be available again');
+        }, minutes * 60 * 1000);
+      }
+    }
+  }, [rateLimited, syncStatus]);
+
+  // Load data from backend API with auto-sync
   useEffect(() => {
     let mounted = true;
 
-    const fetchStepData = async () => {
+    const fetchStepDataWithAutoSync = async () => {
+      // Don't run if already tried sync or rate limited
+      if (hasTriedSync || rateLimited) {
+        console.log('Already tried sync or rate limited - skipping fetch');
+        return;
+      }
+      
+      setHasTriedSync(true);
       try {
         if (mounted) {
-          setLoading(true);
+          setStepDataLoading(true);
           setError(null);
         }
         
-        // Just load local step data - no auto-syncing
+        const token = localStorage.getItem('fithub_token');
+        if (!token) {
+          // No token, just load local data
+          const data = await StepService.getAllSteps();
+          if (mounted) {
+            setStepData(data);
+          }
+          return;
+        }
+
+        // Try auto-sync first (if Fitbit is connected and not rate limited)
+        if (!rateLimited) {
+          try {
+            const autoSyncResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/auto-sync`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (autoSyncResponse.ok) {
+              const autoSyncResult = await autoSyncResponse.json();
+              if (mounted) {
+                setStepData(autoSyncResult.steps);
+                setSyncStatus(autoSyncResult);
+                
+                // Check if we're rate limited (either from response or message)
+                if (autoSyncResult.rateLimitHit || (autoSyncResult.message && autoSyncResult.message.includes('Rate limit timeout'))) {
+                  console.log('Rate limited - stopping auto-sync attempts');
+                  setRateLimited(true);
+                  setStepDataLoading(false);
+                  return;
+                }
+                
+                if (autoSyncResult.synced) {
+                  console.log('Auto-sync completed:', autoSyncResult.message);
+                  // Auto-refresh the page data after successful sync
+                  setTimeout(() => {
+                    if (mounted) {
+                      window.location.reload();
+                    }
+                  }, 2000);
+                } else {
+                  console.log('Auto-sync status:', autoSyncResult.message);
+                }
+              }
+              return;
+            }
+          } catch (autoSyncError) {
+            console.log('Auto-sync not available, falling back to local data');
+          }
+        } else {
+          console.log('Rate limited - skipping auto-sync');
+          setStepDataLoading(false);
+          return;
+        }
+
+        // Fallback to local data
         const data = await StepService.getAllSteps();
         if (mounted) {
           setStepData(data);
@@ -64,18 +150,25 @@ const Dashboard = () => {
         }
       } finally {
         if (mounted) {
-          setLoading(false);
+          setStepDataLoading(false);
         }
       }
     };
 
-    fetchStepData();
+    fetchStepDataWithAutoSync();
 
     // Cleanup function - sets mounted to false when component unmounts
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [hasTriedSync, rateLimited]);
+
+  const handleResetRateLimit = () => {
+    setRateLimited(false);
+    setSyncStatus(null);
+    setHasTriedSync(false);
+    console.log('Rate limit manually reset - auto-sync will be available again');
+  };
 
   const handleDayClick = async (date, steps) => {
     try {
@@ -119,95 +212,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleRefreshFitbitData = async () => {
-    try {
-      setFitbitSyncing(true);
-      setError(null);
-      
-      const token = localStorage.getItem('fithub_token');
-      if (!token) {
-        setError('Please log in to sync Fitbit data');
-        return;
-      }
-      
-      // Add timeout to prevent stuck loading state
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
-      });
-      
-      // Just try to sync directly - if it fails, the backend will tell us why
-      const response = await Promise.race([
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/sync`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }),
-        timeoutPromise
-      ]);
-      
-      if (response.ok) {
-        const result = await response.json();
-        setError(`Fitbit sync successful! Synced ${result.stepsSynced} days of step data.`);
-        setTimeout(() => setError(null), 5000);
-        
-        // Refresh the step data
-        const dataResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (dataResponse.ok) {
-          const dataResult = await dataResponse.json();
-          setStepData(dataResult.steps);
-        }
-      } else {
-        const error = await response.json();
-        if (response.status === 429) {
-          setError(`Rate limited: ${error.message}`);
-        } else {
-          setError(`Fitbit sync failed: ${error.message}`);
-        }
-        setTimeout(() => setError(null), 5000);
-      }
-    } catch (error) {
-      console.error('Failed to sync Fitbit data:', error);
-      setError('Failed to sync Fitbit data. Please try again.');
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setFitbitSyncing(false);
-    }
-  };
 
-  const handleDisconnectFitbit = async () => {
-    try {
-      const token = localStorage.getItem('fithub_token');
-              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/disconnect`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        setError('Fitbit disconnected successfully!');
-        setTimeout(() => setError(null), 5000);
-        
-        // Refresh the step data to remove Fitbit data
-        const data = await StepService.getAllSteps();
-        setStepData(data);
-      } else {
-        const error = await response.json();
-        setError(`Failed to disconnect: ${error.message}`);
-        setTimeout(() => setError(null), 5000);
-      }
-    } catch (error) {
-      console.error('Failed to disconnect Fitbit:', error);
-      setError('Failed to disconnect Fitbit. Please try again.');
-      setTimeout(() => setError(null), 5000);
-    }
-  };
 
   const totalSteps = useMemo(() => {
     if (!stepData || typeof stepData !== 'object') return 0;
@@ -240,6 +245,24 @@ const Dashboard = () => {
           </div>
         )}
 
+        {syncStatus && syncStatus.rateLimitHit && (
+          <div className="px-3 py-2 bg-yellow-600 border border-yellow-400 rounded text-white mb-5 text-sm flex justify-between items-center">
+            <span>Auto-sync paused: {syncStatus.message}</span>
+            <button 
+              onClick={handleResetRateLimit}
+              className="ml-2 px-2 py-1 bg-yellow-700 hover:bg-yellow-800 rounded text-xs"
+            >
+              Reset
+            </button>
+          </div>
+        )}
+
+        {syncStatus && syncStatus.synced && !syncStatus.rateLimitHit && (
+          <div className="px-3 py-2 bg-green-600 border border-green-400 rounded text-white mb-5 text-sm">
+            Auto-sync complete: {syncStatus.message}
+          </div>
+        )}
+
         <Profile 
           profile={profile}
           totalWorkouts={activeDays}
@@ -257,22 +280,18 @@ const Dashboard = () => {
               {activeDays} active days in the last year
             </p>
             <div className="flex gap-2">
-              <button
-                onClick={handleRefreshFitbitData}
-                disabled={fitbitSyncing}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none flex items-center gap-2"
-              >
-                {fitbitSyncing && (
-                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                )}
-                {fitbitSyncing ? 'Syncing...' : 'Sync Fitbit'}
-              </button>
+              {stepDataLoading && (
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-fithub-white">
+                  <div className="w-3 h-3 border border-fithub-white border-t-transparent rounded-full animate-spin"></div>
+                  Syncing step data...
+                </div>
+              )}
             </div>
           </div>
           
           <ContributionGraph 
             data={stepData}
-            isSyncing={fitbitSyncing}
+            isSyncing={stepDataLoading}
           />
         </div>
       </div>

@@ -177,9 +177,70 @@ class UserModel {
     
     if (rows.length === 0) return false;
     
-    // Compare provided password with stored hash
-    // this does not belong in user, belongs in service
-    return bcrypt.compare(password, rows[0].password);
+      // Compare provided password with stored hash
+  // this does not belong in user, belongs in service
+  return bcrypt.compare(password, rows[0].password);
+}
+
+  // Auto-sync tracking methods
+  static async markAutoSyncCompleted(userId) {
+    const [result] = await pool.query(
+      'UPDATE users SET fitbit_auto_sync_completed = 1, fitbit_auto_sync_last_attempt = NOW(), fitbit_auto_sync_failed_count = 0, fitbit_last_sync = NOW() WHERE id = ?',
+      [userId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  static async markAutoSyncFailed(userId, nextAttemptMinutes = 60) {
+    const nextAttempt = new Date(Date.now() + nextAttemptMinutes * 60 * 1000);
+    const [result] = await pool.query(
+      'UPDATE users SET fitbit_auto_sync_last_attempt = NOW(), fitbit_auto_sync_next_attempt = ?, fitbit_auto_sync_failed_count = fitbit_auto_sync_failed_count + 1 WHERE id = ?',
+      [nextAttempt, userId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  static async hasCompletedAutoSync(userId) {
+    const [rows] = await pool.query(
+      'SELECT fitbit_auto_sync_completed FROM users WHERE id = ?',
+      [userId]
+    );
+    return rows.length > 0 && rows[0].fitbit_auto_sync_completed === 1;
+  }
+
+  static async getUsersNeedingAutoSync() {
+    const [rows] = await pool.query(
+      'SELECT id, fitbit_access_token, fitbit_refresh_token, fitbit_auto_sync_failed_count FROM users WHERE fitbit_connected = 1 AND fitbit_auto_sync_enabled = 1 AND (fitbit_auto_sync_next_attempt IS NULL OR fitbit_auto_sync_next_attempt <= NOW()) AND fitbit_auto_sync_failed_count < 5',
+      []
+    );
+    return rows;
+  }
+
+  static async updateAutoSyncStatus(userId, status) {
+    const updates = [];
+    const values = [];
+    
+    if (status.completed !== undefined) {
+      updates.push('fitbit_auto_sync_completed = ?');
+      values.push(status.completed ? 1 : 0);
+    }
+    if (status.nextAttempt !== undefined) {
+      updates.push('fitbit_auto_sync_next_attempt = ?');
+      values.push(status.nextAttempt);
+    }
+    if (status.failedCount !== undefined) {
+      updates.push('fitbit_auto_sync_failed_count = ?');
+      values.push(status.failedCount);
+    }
+    
+    if (updates.length === 0) return false;
+    
+    values.push(userId);
+    const [result] = await pool.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+    return result.affectedRows > 0;
   }
 }
 

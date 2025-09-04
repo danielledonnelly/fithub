@@ -42,11 +42,11 @@ class FitbitController {
       const { code, state } = req.query;
       const userId = state; // Get user ID from state parameter
       
-      console.log('Code:', code ? '✅ Present' : '❌ Missing');
+      console.log('Code:', code ? 'Present' : 'Missing');
       console.log('State (userId):', userId);
 
       if (!code) {
-        console.log('❌ No authorization code received');
+        console.log('No authorization code received');
         return res.status(400).json({
           error: "Authorization code is required",
         });
@@ -80,6 +80,22 @@ class FitbitController {
         message: "Fitbit connected successfully",
         connected: true,
       });
+
+      // Trigger initial auto-sync for new connection
+      try {
+        console.log('Triggering initial auto-sync for new Fitbit connection...');
+        // Use setImmediate to avoid blocking the response
+        setImmediate(async () => {
+          try {
+            await FitbitController.autoSyncForDashboard({ user: { sub: userId } }, { json: () => {} });
+            console.log('Initial auto-sync completed for user:', userId);
+          } catch (syncError) {
+            console.error('Initial auto-sync failed (non-critical):', syncError.message);
+          }
+        });
+      } catch (autoSyncError) {
+        console.error('Failed to trigger initial auto-sync:', autoSyncError.message);
+      }
     } catch (error) {
       console.error("Error handling OAuth callback:", error);
       res.status(500).json({
@@ -105,7 +121,7 @@ class FitbitController {
       console.log('========================');
       
       if (!user?.fitbit_connected || !user?.fitbit_access_token) {
-        console.log('❌ Fitbit sync failed - not connected or no access token');
+        console.log('Fitbit sync failed - not connected or no access token');
         return res.status(400).json({
           error: "Fitbit not connected",
           message: "Please connect your Fitbit account first",
@@ -163,21 +179,21 @@ class FitbitController {
           // Only have today's data - go back to Jan 1st
           endDate = new Date(oldestDate.getTime() - 24 * 60 * 60 * 1000); // Day before oldest
           startDate = januaryFirst;
-          console.log(`🔄 INCREMENTAL SYNC: Only have today's data, syncing from Jan 1st to yesterday (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
+          console.log(`Incremental sync: Only have today's data, syncing from Jan 1st to yesterday (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
         } else {
           // Have historical data - get today + go back from oldest to Jan 1st
           endDate = new Date(oldestDate.getTime() - 24 * 60 * 60 * 1000); // Day before oldest
           startDate = januaryFirst;
-          console.log(`🔄 INCREMENTAL SYNC: Found existing data from ${oldestRows[0].oldest_date}, syncing from Jan 1st to day before oldest (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
-          console.log(`📅 Also will refresh today's data (${todayString}) in case it updated`);
+          console.log(`Incremental sync: Found existing data from ${oldestRows[0].oldest_date}, syncing from Jan 1st to day before oldest (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
+          console.log(`Also will refresh today's data (${todayString}) in case it updated`);
         }
       } else {
         // FIRST SYNC: No existing data - try to get 6 months of historical data (180 days)
         // This is aggressive but will give users a complete picture from day one
         endDate = new Date();
         startDate = new Date(endDate.getTime() - 179 * 24 * 60 * 60 * 1000); // 180 days ago
-        console.log(`🆕 FIRST SYNC: No existing Fitbit data, attempting to sync 6 months of historical data (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
-        console.log(`📊 This may take 2-3 minutes but will give you complete historical data!`);
+        console.log(`First sync: No existing Fitbit data, attempting to sync 6 months of historical data (${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]})`);
+        console.log(`This may take 2-3 minutes but will give you complete historical data!`);
       }
       
       const stepData = {};
@@ -198,12 +214,12 @@ class FitbitController {
         // Only add today if it's not already in our range
         if (todayString !== endDateString) {
           daysToFetch.unshift(today); // Add today at the beginning (most recent)
-          console.log(`📅 Added today's date (${todayString}) to refresh in case steps updated`);
+          console.log(`Added today's date (${todayString}) to refresh in case steps updated`);
         }
       }
 
-      // PARALLEL PROCESSING: Process days in batches to maximize throughput while respecting rate limits
-      console.log(`🚀 PARALLEL SYNC: Processing ${daysToFetch.length} days with controlled concurrency...`);
+      // Parallel processing: Process days in batches to maximize throughput while respecting rate limits
+      console.log(`Parallel sync: Processing ${daysToFetch.length} days with controlled concurrency...`);
       
       // Optimize batch settings based on sync type and data range
       const isFirstSync = !oldestRows[0].oldest_date;
@@ -221,16 +237,16 @@ class FitbitController {
         BATCH_DELAY = 2000; // 2s delays
       }
       
-      const syncMode = isFirstSync ? 'FIRST SYNC' : (isLargeIncrementalSync ? 'LARGE INCREMENTAL SYNC' : 'SMALL INCREMENTAL SYNC');
-      console.log(`⚡ ${syncMode} mode: ${BATCH_SIZE} concurrent requests, ${BATCH_DELAY}ms delays`);
+      const syncMode = isFirstSync ? 'First sync' : (isLargeIncrementalSync ? 'Large incremental sync' : 'Small incremental sync');
+      console.log(`${syncMode} mode: ${BATCH_SIZE} concurrent requests, ${BATCH_DELAY}ms delays`);
       
       if (isFirstSync || isLargeIncrementalSync) {
-        console.log(`⏱️  Estimated time: ${Math.ceil(daysToFetch.length / BATCH_SIZE) * (BATCH_DELAY / 1000)} seconds`);
+        console.log(`Estimated time: ${Math.ceil(daysToFetch.length / BATCH_SIZE) * (BATCH_DELAY / 1000)} seconds`);
       }
       
       for (let i = 0; i < daysToFetch.length; i += BATCH_SIZE) {
         if (rateLimitHit) {
-          console.log('🚫 Rate limit hit, stopping batch processing');
+          console.log('Rate limit hit, stopping batch processing');
           break;
         }
         
@@ -539,6 +555,252 @@ class FitbitController {
         error: "Failed to get steps data",
         message: error.message,
       });
+    }
+  }
+
+  // Efficient auto-sync for dashboard load
+  static async autoSyncForDashboard(req, res) {
+    try {
+      const userId = req.user.sub;
+      const user = await UserModel.findById(userId);
+      
+      console.log(`Dashboard auto-sync requested for user ${userId}`);
+      
+      if (!user?.fitbit_connected || !user?.fitbit_access_token) {
+        return res.json({ 
+          synced: false, 
+          message: "Fitbit not connected",
+          steps: {} 
+        });
+      }
+
+      // Check if we need to sync (respect rate limit timeouts)
+      const lastSync = user.fitbit_last_sync;
+      const nextAttempt = user.fitbit_auto_sync_next_attempt;
+      const StepModel = require('../models/Step');
+      let existingSteps = await StepModel.getAllSteps(userId);
+      
+      // Only respect rate limit timeout if we're actually in a timeout period
+      if (nextAttempt && new Date(nextAttempt) > new Date()) {
+        const timeUntilNext = Math.ceil((new Date(nextAttempt) - new Date()) / (1000 * 60));
+        console.log(`Rate limited - next sync in ${timeUntilNext} minutes (${Object.keys(existingSteps).length} days of data)`);
+        console.log(`Current time: ${new Date().toISOString()}, Next attempt: ${nextAttempt}`);
+        return res.json({ 
+          synced: false, 
+          message: `Rate limited - next sync in ${timeUntilNext} minutes`,
+          steps: existingSteps,
+          rateLimitHit: true,
+          nextSyncTime: nextAttempt
+        });
+      } else if (nextAttempt && new Date(nextAttempt) <= new Date()) {
+        console.log(`Rate limit timeout expired - proceeding with sync`);
+        // Clear the rate limit timeout since it has expired
+        await UserModel.updateUser(userId, {
+          fitbit_auto_sync_next_attempt: null,
+          fitbit_auto_sync_failed_count: 0
+        });
+      }
+      
+      // Check if we're in a rate limit timeout period
+      if (user.fitbit_auto_sync_next_attempt && new Date() < new Date(user.fitbit_auto_sync_next_attempt)) {
+        const nextAttempt = new Date(user.fitbit_auto_sync_next_attempt);
+        const timeUntilNext = Math.ceil((nextAttempt - new Date()) / 1000 / 60);
+        console.log(`Rate limit timeout active. Next sync attempt in ${timeUntilNext} minutes at ${nextAttempt.toLocaleTimeString()}`);
+        return res.json({
+          synced: false,
+          message: `Rate limit timeout active. Next sync in ${timeUntilNext} minutes`,
+          steps: existingSteps
+        });
+      }
+
+      // Perform efficient sync
+      const fitbitService = new FitbitService();
+      fitbitService.setCredentials({
+        access_token: user.fitbit_access_token,
+        refresh_token: user.fitbit_refresh_token,
+      });
+
+      const today = new Date();
+      
+      // Aggressive sync strategy: Go back as far as possible until rate limited
+      // existingSteps already declared above
+      
+      // Find the most recent date we have data for
+      const existingDates = Object.keys(existingSteps).sort().reverse();
+      const mostRecentDate = existingDates.length > 0 ? new Date(existingDates[0]) : null;
+      
+      // Aggressive sync: Always try to sync from today back 1 year, skipping only existing data
+      let daysToSync = [];
+      const oneYearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+      
+      // Always sync from today back to 1 year ago, but skip days we already have
+      // Process in chronological order (most recent first) to prioritize recent data
+      for (let i = 0; i < 365; i++) {
+        const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Only sync if we don't already have data for this date
+        if (!existingSteps[dateStr]) {
+          daysToSync.push(date);
+        }
+      }
+      
+      // Sort days to ensure we process most recent first (today -> yesterday -> etc.)
+      daysToSync.sort((a, b) => b - a);
+      
+      console.log(`Found ${daysToSync.length} days to sync out of 365 total days`);
+      console.log(`First 10 days to sync: ${daysToSync.slice(0, 10).map(d => d.toISOString().split('T')[0]).join(', ')}`);
+      
+      // If no days need syncing, return existing data
+      if (daysToSync.length === 0) {
+        console.log(`No days need syncing - all data up to date`);
+        return res.json({
+          synced: false,
+          message: "All data up to date",
+          steps: existingSteps
+        });
+      }
+      
+      console.log(`Starting sync for ${daysToSync.length} missing days`);
+
+      const stepData = {};
+      let syncedCount = 0;
+      let rateLimitHit = false;
+
+      const BATCH_SIZE = 10; // Larger batches for more aggressive syncing
+      const BATCH_DELAY = 1000; // 1 second between batches
+      const MAX_SYNC_TIME = 55 * 60 * 1000; // 55 minutes max sync time
+      const startTime = Date.now();
+
+      console.log(`Aggressive sync: ${daysToSync.length} days to process`);
+      console.log(`Date range: ${daysToSync[daysToSync.length-1]?.toISOString().split('T')[0]} to ${daysToSync[0]?.toISOString().split('T')[0]}`);
+
+      for (let i = 0; i < daysToSync.length && !rateLimitHit; i += BATCH_SIZE) {
+        // Check if we've exceeded max sync time
+        if (Date.now() - startTime > MAX_SYNC_TIME) {
+          console.log('Max sync time reached (55 minutes), stopping sync');
+          break;
+        }
+
+        const batch = daysToSync.slice(i, i + BATCH_SIZE);
+        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(daysToSync.length / BATCH_SIZE);
+        const progressPercent = Math.round((i / daysToSync.length) * 100);
+        
+        console.log(`Batch ${batchNumber}/${totalBatches} (${progressPercent}%): ${batch.length} days - synced ${syncedCount} so far`);
+        
+        const batchPromises = batch.map(async (day) => {
+          try {
+            const dayData = await fitbitService.getStepData(day);
+            if (dayData.steps > 0) {
+              stepData[dayData.date] = dayData.steps;
+              syncedCount++;
+              console.log(`Synced ${dayData.date}: ${dayData.steps} steps`);
+            }
+            return { success: true, date: dayData.date };
+          } catch (error) {
+            if (error.message && error.message.includes('429')) {
+              console.log(`Rate limit hit for ${day.toISOString().split('T')[0]} - stopping sync`);
+              rateLimitHit = true;
+              return { success: false, rateLimit: true };
+            }
+            console.log(`Error syncing ${day.toISOString().split('T')[0]}: ${error.message}`);
+            return { success: false, error: error.message };
+          }
+        });
+
+        await Promise.all(batchPromises);
+        
+        // Add delay between batches to respect rate limits
+        if (!rateLimitHit && i + BATCH_SIZE < daysToSync.length) {
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+        }
+      }
+
+      // Save to database
+      for (const [date, steps] of Object.entries(stepData)) {
+        await StepModel.updateFitbitSteps(userId, date, steps);
+      }
+
+      // Update last sync time and rate limit status
+      let nextSyncTime = null;
+      if (rateLimitHit) {
+        // Calculate next hour boundary (e.g., if it's 6:30, next sync at 7:00)
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 0, 0); // Next hour at :00
+        nextSyncTime = nextHour;
+        console.log(`Rate limit hit - next sync scheduled for ${nextSyncTime.toISOString()}`);
+      }
+      
+      await UserModel.updateUser(userId, {
+        fitbit_last_sync: new Date(),
+        fitbit_auto_sync_next_attempt: nextSyncTime,
+        fitbit_auto_sync_failed_count: rateLimitHit ? 1 : 0
+      });
+
+      // Get all steps (including existing data)
+      const allSteps = await StepModel.getAllSteps(userId);
+
+      let message = `Synced ${syncedCount} days of step data`;
+      if (rateLimitHit) {
+        message += ` (rate limited - will retry in 1 hour)`;
+      } else if (syncedCount === 0) {
+        message = "No new data to sync";
+      }
+
+      res.json({
+        synced: true,
+        message,
+        steps: allSteps,
+        rateLimitHit,
+        syncedCount,
+        nextSyncTime: nextSyncTime ? nextSyncTime.toISOString() : null
+      });
+
+    } catch (error) {
+      console.error('Auto-sync error:', error);
+      res.status(500).json({
+        error: "Auto-sync failed",
+        message: error.message,
+      });
+    }
+  }
+
+  // Debug endpoint to check sync status
+  static async debugSyncStatus(req, res) {
+    try {
+      const userId = req.user.sub;
+      const user = await UserModel.findById(userId);
+      const StepModel = require('../models/Step');
+      const existingSteps = await StepModel.getAllSteps(userId);
+      
+      const existingDates = Object.keys(existingSteps).sort().reverse();
+      const today = new Date();
+      const oneYearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+      
+      let daysToSync = [];
+      for (let i = 0; i < 365; i++) {
+        const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        if (!existingSteps[dateStr]) {
+          daysToSync.push(dateStr);
+        }
+      }
+      
+      res.json({
+        userId,
+        fitbitConnected: user?.fitbit_connected,
+        existingStepsCount: existingDates.length,
+        mostRecentDate: existingDates[0],
+        oldestDate: existingDates[existingDates.length - 1],
+        daysToSyncCount: daysToSync.length,
+        daysToSync: daysToSync.slice(0, 10), // First 10 days
+        lastSync: user?.fitbit_last_sync,
+        nextAttempt: user?.fitbit_auto_sync_next_attempt
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   }
 }
