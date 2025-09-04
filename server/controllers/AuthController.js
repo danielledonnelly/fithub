@@ -160,7 +160,7 @@ class AuthController {
   static async updateProfile(req, res) {
     try {
       const userId = req.user.sub;
-      const { name, bio, avatar } = req.body;
+      const { name, bio, avatar, daily_goal, weekly_goal } = req.body;
       
       // Validate input
       if (name && typeof name !== 'string') {
@@ -181,8 +181,20 @@ class AuthController {
         });
       }
 
+      if (daily_goal && (typeof daily_goal !== 'number' || daily_goal < 0)) {
+        return res.status(400).json({
+          error: 'Invalid daily goal format'
+        });
+      }
+
+      if (weekly_goal && (typeof weekly_goal !== 'number' || weekly_goal < 0)) {
+        return res.status(400).json({
+          error: 'Invalid weekly goal format'
+        });
+      }
+
       // Use AuthService to update profile (no direct UserModel calls)
-      const profile = await AuthService.updateProfile(userId, { name, bio, avatar });
+      const profile = await AuthService.updateProfile(userId, { name, bio, avatar, daily_goal, weekly_goal });
 
       res.json({
         message: 'Profile updated successfully',

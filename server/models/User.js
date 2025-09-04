@@ -135,6 +135,16 @@ class UserModel {
       values.push(updates.fitbit_last_sync);
     }
     
+    // Goal fields
+    if (updates.daily_goal !== undefined) {
+      fields.push('daily_goal = ?');
+      values.push(updates.daily_goal);
+    }
+    if (updates.weekly_goal !== undefined) {
+      fields.push('weekly_goal = ?');
+      values.push(updates.weekly_goal);
+    }
+    
     if (fields.length === 0) {
       throw new Error('No valid fields to update');
     }

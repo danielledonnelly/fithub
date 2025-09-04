@@ -693,12 +693,16 @@ class FitbitController {
         const batchPromises = batch.map(async (day) => {
           try {
             const dayData = await fitbitService.getStepData(day);
+            console.log(`Raw dayData from Fitbit:`, dayData);
+            
             if (dayData.steps > 0) {
               // Ensure date is in YYYY-MM-DD format
               const dateStr = dayData.date || day.toISOString().split('T')[0];
               stepData[dateStr] = dayData.steps;
               syncedCount++;
               console.log(`Synced ${dateStr}: ${dayData.steps} steps`);
+            } else {
+              console.log(`No steps for ${day.toISOString().split('T')[0]} - dayData:`, dayData);
             }
             return { success: true, date: dayData.date || day.toISOString().split('T')[0] };
           } catch (error) {
@@ -730,9 +734,20 @@ class FitbitController {
 
       // Save to database
       console.log(`Saving ${Object.keys(stepData).length} days of step data to database`);
-      for (const [date, steps] of Object.entries(stepData)) {
-        console.log(`Saving ${date}: ${steps} steps`);
-        await StepModel.updateFitbitSteps(userId, date, steps);
+      console.log(`Step data to save:`, stepData);
+      
+      if (Object.keys(stepData).length === 0) {
+        console.log('WARNING: No step data to save - stepData object is empty');
+      } else {
+        for (const [date, steps] of Object.entries(stepData)) {
+          console.log(`Saving ${date}: ${steps} steps`);
+          try {
+            await StepModel.updateFitbitSteps(userId, date, steps);
+            console.log(`Successfully saved ${date}: ${steps} steps`);
+          } catch (saveError) {
+            console.error(`Failed to save ${date}: ${steps} steps -`, saveError);
+          }
+        }
       }
       console.log('Database save completed');
 
@@ -783,6 +798,7 @@ class FitbitController {
       });
     }
   }
+
 
   // Debug endpoint to check sync status
   static async debugSyncStatus(req, res) {

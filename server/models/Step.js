@@ -23,8 +23,15 @@ class StepModel {
     // Convert to the format expected by frontend
     const stepData = {};
     rows.forEach(row => {
-      // row.date is now a string in 'YYYY-MM-DD' format
-      stepData[row.date] = row.total_steps;
+      // Ensure date is in YYYY-MM-DD format
+      let dateStr = row.date;
+      if (row.date instanceof Date) {
+        dateStr = row.date.toISOString().split('T')[0];
+      } else if (typeof row.date === 'string' && row.date.includes('GMT')) {
+        // Handle case where date is stored as a string but in Date format
+        dateStr = new Date(row.date).toISOString().split('T')[0];
+      }
+      stepData[dateStr] = row.total_steps;
     });
     
     return stepData;

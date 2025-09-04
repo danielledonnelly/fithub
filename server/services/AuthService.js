@@ -126,39 +126,43 @@ class AuthService {
     }
   }
 
-  // Get user profile
+    // Get user profile
   static async getProfile(userId) {
-  const user = await UserModel.findById(userId);
-  if (!user) {
-    throw new Error('User not found');
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    return {
+      name: user.display_name || user.username,
+      bio: user.bio || '',
+      avatar: user.avatar || '',
+      daily_goal: user.daily_goal || 10000,
+      weekly_goal: user.weekly_goal || 70000
+    };
   }
-  
-  return {
-    name: user.display_name || user.username,
-    bio: user.bio || '',
-    avatar: user.avatar || ''
-  };
-}
 
-  // Update user profile
+    // Update user profile
   static async updateProfile(userId, updates) {
-  // Map frontend 'name' field to database 'display_name' field
-  const mappedUpdates = {
-    ...updates,
-    display_name: updates.name !== undefined ? updates.name : undefined
-  };
-  
-  // Remove the 'name' field since we've mapped it to 'display_name'
-  delete mappedUpdates.name;
-  
-  const updatedUser = await UserModel.updateUser(userId, mappedUpdates);
-  
-  return {
-    name: updatedUser.display_name || updatedUser.username,
-    bio: updatedUser.bio || '',
-    avatar: updatedUser.avatar || ''
-  };
-}
+    // Map frontend 'name' field to database 'display_name' field
+    const mappedUpdates = {
+      ...updates,
+      display_name: updates.name !== undefined ? updates.name : undefined
+    };
+    
+    // Remove the 'name' field since we've mapped it to 'display_name'
+    delete mappedUpdates.name;
+    
+    const updatedUser = await UserModel.updateUser(userId, mappedUpdates);
+    
+    return {
+      name: updatedUser.display_name || updatedUser.username,
+      bio: updatedUser.bio || '',
+      avatar: updatedUser.avatar || '',
+      daily_goal: updatedUser.daily_goal || 10000,
+      weekly_goal: updatedUser.weekly_goal || 70000
+    };
+  }
 
   static async deleteUser(userId) {
   const deletedUser = await UserModel.deleteUser(userId);

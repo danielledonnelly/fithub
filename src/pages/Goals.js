@@ -3,130 +3,220 @@ import StepService from '../services/StepService';
 
 const Goals = () => {
   const [stepData, setStepData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [dailyGoal, setDailyGoal] = useState(10000);
-  const [weeklyGoal, setWeeklyGoal] = useState(70000);
-  const [isEditingGoals, setIsEditingGoals] = useState(false);
-  const [goalType, setGoalType] = useState('daily'); // daily, weekly, custom
+  const [stepDataLoading, setStepDataLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [hasTriedSync, setHasTriedSync] = useState(false);
+  
+  // Load goals from localStorage with defaults
+  const [dailyGoal, setDailyGoal] = useState(() => {
+    const saved = localStorage.getItem('fithub_daily_goal');
+    return saved ? parseInt(saved) : 10000;
+  });
+  const [weeklyGoal, setWeeklyGoal] = useState(() => {
+    const saved = localStorage.getItem('fithub_weekly_goal');
+    return saved ? parseInt(saved) : 70000;
+  });
 
-  const fetchStepData = async () => {
-    try {
-      setLoading(true);
-      
-      // Try to get combined step data (local + Fitbit) first
+  // Load goals from database on component mount
+  useEffect(() => {
+    const loadGoalsFromDatabase = async () => {
       const token = localStorage.getItem('fithub_token');
       if (token) {
         try {
-          // First check if Fitbit is connected
-          const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/auth/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
           
-          if (statusResponse.ok) {
-            const status = await statusResponse.json();
-            if (status.connected) {
-              // Fitbit is connected, try to get combined data
-              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-              
-              if (response.ok) {
-                const result = await response.json();
-                setStepData(result.steps);
-                console.log('Using combined step data:', result.source);
-                return;
-              }
+          if (response.ok) {
+            const profile = await response.json();
+            if (profile.daily_goal) {
+              setDailyGoal(profile.daily_goal);
+              localStorage.setItem('fithub_daily_goal', profile.daily_goal.toString());
+            }
+            if (profile.weekly_goal) {
+              setWeeklyGoal(profile.weekly_goal);
+              localStorage.setItem('fithub_weekly_goal', profile.weekly_goal.toString());
             }
           }
-        } catch (fitbitError) {
-          console.log('Fitbit data not available, falling back to local data');
+        } catch (error) {
+          console.log('Could not load goals from database, using localStorage values');
         }
       }
-      
-      // Fallback to local step data
-      const data = await StepService.getAllSteps();
-      setStepData(data);
-    } catch (error) {
-      console.error('Failed to fetch step data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
+    loadGoalsFromDatabase();
+  }, []);
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
+
+  // Check if rate limit has expired
+  useEffect(() => {
+    if (rateLimited && syncStatus && syncStatus.message && syncStatus.message.includes('Rate limit timeout')) {
+      // Extract the next attempt time from the message
+      const match = syncStatus.message.match(/Next sync in (\d+) minutes/);
+      if (match) {
+        const minutes = parseInt(match[1]);
+        console.log(`Rate limit expires in ${minutes} minutes`);
+        // Reset rate limit state after the timeout period
+        setTimeout(() => {
+          setRateLimited(false);
+          console.log('Rate limit expired - auto-sync will be available again');
+        }, minutes * 60 * 1000);
+      }
+    }
+  }, [rateLimited, syncStatus]);
+
+  // Load existing data first, then auto-sync in background
   useEffect(() => {
     let mounted = true;
 
-    const fetchData = async () => {
+    const loadDataAndSync = async () => {
       try {
         if (mounted) {
-          setLoading(true);
+          setStepDataLoading(true);
+          setError(null);
         }
         
-        // Try to get combined step data (local + Fitbit) first
         const token = localStorage.getItem('fithub_token');
-        if (token) {
+        if (!token) {
+          // No token, just load local data
+          const data = await StepService.getAllSteps();
+          if (mounted) {
+            setStepData(data);
+            setStepDataLoading(false);
+          }
+          return;
+        }
+
+        // First, load existing data immediately
+        try {
+          const existingDataResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (existingDataResponse.ok) {
+            const existingData = await existingDataResponse.json();
+            if (mounted) {
+              setStepData(existingData);
+              setStepDataLoading(false); // Show existing data immediately
+            }
+          }
+        } catch (existingDataError) {
+          console.log('Could not load existing data, falling back to local');
+          const data = await StepService.getAllSteps();
+          if (mounted) {
+            setStepData(data);
+            setStepDataLoading(false);
+          }
+        }
+
+        // Today's steps will come from the database data loaded above
+        // No need for separate API call - the stepData already includes today's steps
+
+        // Then try auto-sync in background (if not already tried or rate limited)
+        if (!hasTriedSync && !rateLimited) {
+          setHasTriedSync(true);
+          console.log('Starting background auto-sync...');
+          
           try {
-            // First check if Fitbit is connected
-            const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
+            const autoSyncResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/auto-sync`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
             });
             
-            if (statusResponse.ok) {
-              const status = await statusResponse.json();
-              if (status.connected) {
-                // Fitbit is connected, try to get combined data
-                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
+            if (autoSyncResponse.ok) {
+              const autoSyncResult = await autoSyncResponse.json();
+              if (mounted) {
+                setSyncStatus(autoSyncResult);
                 
-                if (response.ok) {
-                  const result = await response.json();
-                  if (mounted) {
-                    setStepData(result.steps);
-                    console.log('Using combined step data:', result.source);
-                  }
+                // Check if we're rate limited
+                if (autoSyncResult.rateLimitHit || (autoSyncResult.message && autoSyncResult.message.includes('Rate limit timeout'))) {
+                  console.log('Rate limited - stopping auto-sync attempts');
+                  setRateLimited(true);
                   return;
+                }
+                
+                if (autoSyncResult.synced) {
+                  console.log('Auto-sync completed:', autoSyncResult.message);
+                  // Update the step data with new data
+                  setStepData(autoSyncResult.steps);
+                } else {
+                  console.log('Auto-sync status:', autoSyncResult.message);
+                  // Even if no sync happened, update with current data
+                  if (autoSyncResult.steps) {
+                    setStepData(autoSyncResult.steps);
+                  }
                 }
               }
             }
-          } catch (fitbitError) {
-            console.log('Fitbit data not available, falling back to local data');
+          } catch (autoSyncError) {
+            console.log('Auto-sync not available');
           }
         }
-        
-        // Fallback to local step data
-        const data = await StepService.getAllSteps();
-        if (mounted) {
-          setStepData(data);
-        }
       } catch (error) {
-        console.error('Failed to fetch step data:', error);
-      } finally {
+        console.error('Error in loadDataAndSync:', error);
         if (mounted) {
-          setLoading(false);
+          setError('Failed to load step data');
+          setStepDataLoading(false);
         }
       }
     };
 
-    fetchData();
+    loadDataAndSync();
 
+    // Cleanup function - sets mounted to false when component unmounts
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [hasTriedSync, rateLimited]);
 
-  const saveGoals = () => {
-    localStorage.setItem('fithub_daily_goal', dailyGoal.toString());
-    localStorage.setItem('fithub_weekly_goal', weeklyGoal.toString());
-    setIsEditingGoals(false);
+  const handleResetRateLimit = () => {
+    setRateLimited(false);
+    setSyncStatus(null);
+    setHasTriedSync(false);
+    console.log('Rate limit manually reset - auto-sync will be available again');
+  };
+
+  const saveGoals = async () => {
+    try {
+      // Save to localStorage
+      localStorage.setItem('fithub_daily_goal', dailyGoal.toString());
+      localStorage.setItem('fithub_weekly_goal', weeklyGoal.toString());
+      
+      // Save to database if user is authenticated
+      const token = localStorage.getItem('fithub_token');
+      if (token) {
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/profile`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              daily_goal: dailyGoal,
+              weekly_goal: weeklyGoal
+            })
+          });
+          
+          if (response.ok) {
+            console.log('Goals saved to database');
+          }
+        } catch (dbError) {
+          console.log('Could not save goals to database, using localStorage only');
+        }
+      }
+      
+      setIsEditingGoals(false);
+    } catch (error) {
+      console.error('Failed to save goals:', error);
+    }
   };
 
   const getRecentDays = (days) => {
@@ -172,6 +262,7 @@ const Goals = () => {
     const progress = Math.round((steps / dailyGoal) * 100);
     const remaining = Math.max(0, dailyGoal - steps);
     
+    
     return {
       steps,
       progress,
@@ -199,21 +290,40 @@ const Goals = () => {
   const todayProgress = getTodayProgress();
   const currentStreak = getGoalStreak();
 
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="main-content">
-          <div className="text-center py-10 text-fithub-text">
-            Loading goals data...
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container">
       <div className="main-content">
+        {error && (
+          <div className="px-3 py-2 bg-red-600 border border-red-400 rounded text-white mb-5 text-sm">
+            {error}
+          </div>
+        )}
+
+        {syncStatus && syncStatus.rateLimitHit && (
+          <div className="px-3 py-2 bg-yellow-600 border border-yellow-400 rounded text-white mb-5 text-sm flex justify-between items-center">
+            <span>Auto-sync paused: {syncStatus.message}</span>
+            <button 
+              onClick={handleResetRateLimit}
+              className="ml-2 px-2 py-1 bg-yellow-700 hover:bg-yellow-800 rounded text-xs"
+            >
+              Reset
+            </button>
+          </div>
+        )}
+
+        {syncStatus && syncStatus.synced && !syncStatus.rateLimitHit && (
+          <div className="px-3 py-2 bg-green-600 border border-green-400 rounded text-white mb-5 text-sm">
+            Auto-sync complete: {syncStatus.message}
+          </div>
+        )}
+
+        {syncStatus && !syncStatus.synced && !syncStatus.rateLimitHit && (
+          <div className="px-3 py-2 bg-blue-600 border border-blue-400 rounded text-white mb-5 text-sm">
+            Background sync in progress: {syncStatus.message}
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-5">
           <div>
             <h1 className="contribution-title">Goals</h1>
@@ -221,13 +331,14 @@ const Goals = () => {
               Set and track your fitness goals using your step data
             </p>
           </div>
-          <button
-            onClick={fetchStepData}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
-          >
-            {loading ? 'Loading...' : 'Refresh Data'}
-          </button>
+          <div className="flex gap-2">
+            {stepDataLoading && (
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-fithub-white">
+                <div className="w-3 h-3 border border-fithub-white border-t-transparent rounded-full animate-spin"></div>
+                Syncing step data...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Goal Settings */}
