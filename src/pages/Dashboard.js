@@ -10,6 +10,7 @@ import ScreenshotUpload from '../components/ScreenshotUpload';
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [fitbitSyncing, setFitbitSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState({
     name: '',
@@ -120,7 +121,7 @@ const Dashboard = () => {
 
   const handleRefreshFitbitData = async () => {
     try {
-      setLoading(true);
+      setFitbitSyncing(true);
       setError(null);
       
       const token = localStorage.getItem('fithub_token');
@@ -175,7 +176,7 @@ const Dashboard = () => {
       setError('Failed to sync Fitbit data. Please try again.');
       setTimeout(() => setError(null), 5000);
     } finally {
-      setLoading(false);
+      setFitbitSyncing(false);
     }
   };
 
@@ -218,20 +219,11 @@ const Dashboard = () => {
     return Object.values(stepData).filter(steps => steps > 0).length;
   }, [stepData]);
 
-
-
   if (loading) {
     return (
       <div className="container">
         <div className="main-content">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '200px',
-            fontSize: '16px',
-            color: '#c9d1d9'
-          }}>
+          <div className="flex justify-center items-center h-50 text-base text-c9d1d9">
             Loading step data...
           </div>
         </div>
@@ -243,15 +235,7 @@ const Dashboard = () => {
     <div className="container">
       <div className="main-content">
         {error && (
-          <div style={{
-            padding: '12px 16px',
-            backgroundColor: '#da3633',
-            border: '1px solid #f85149',
-            borderRadius: '6px',
-            color: '#ffffff',
-            marginBottom: '20px',
-            fontSize: '14px'
-          }}>
+          <div className="px-3 py-2 bg-red-600 border border-red-400 rounded text-white mb-5 text-sm">
             {error}
           </div>
         )}
@@ -267,30 +251,28 @@ const Dashboard = () => {
 
         
         <div className="contribution-section">
-          <div style={{ 
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '12px',
-            maxWidth: '100%'
-          }}>
-            <h2 className="contribution-title" style={{ margin: 0 }}>Step Activity</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="flex justify-between items-center mb-3 max-w-full">
+            <h2 className="contribution-title m-0">Step Activity</h2>
+            <div className="flex gap-2">
               <button
                 onClick={handleRefreshFitbitData}
-                disabled={loading}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
+                disabled={fitbitSyncing}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none flex items-center gap-2"
               >
-                {loading ? 'Syncing...' : 'Sync Fitbit'}
+                {fitbitSyncing && (
+                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
+                {fitbitSyncing ? 'Syncing...' : 'Sync Fitbit'}
               </button>
             </div>
           </div>
-          <p className="contribution-subtitle" style={{ maxWidth: '100%' }}>
+          <p className="contribution-subtitle max-w-full">
             {activeDays} active days in the last year
           </p>
           
           <ContributionGraph 
             data={stepData}
+            isSyncing={fitbitSyncing}
           />
         </div>
       </div>

@@ -117,20 +117,11 @@ const Goals = () => {
     };
 
     fetchData();
-    loadGoals();
-    
+
     return () => {
       mounted = false;
     };
   }, []);
-
-  const loadGoals = () => {
-    const savedDailyGoal = localStorage.getItem('fithub_daily_goal');
-    const savedWeeklyGoal = localStorage.getItem('fithub_weekly_goal');
-    
-    if (savedDailyGoal) setDailyGoal(parseInt(savedDailyGoal));
-    if (savedWeeklyGoal) setWeeklyGoal(parseInt(savedWeeklyGoal));
-  };
 
   const saveGoals = () => {
     localStorage.setItem('fithub_daily_goal', dailyGoal.toString());
@@ -138,21 +129,22 @@ const Goals = () => {
     setIsEditingGoals(false);
   };
 
-  const getRecentDays = (days = 7) => {
+  const getRecentDays = (days) => {
     const result = [];
     const today = new Date();
     
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
-      date.setDate(today.getDate() - i);
+      date.setDate(date.getDate() - i);
       const dateString = date.toISOString().split('T')[0];
       const steps = stepData[dateString] || 0;
+      const goalMet = steps >= dailyGoal;
       
       result.push({
         date: dateString,
         dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
         steps,
-        goalMet: steps >= dailyGoal
+        goalMet
       });
     }
     
@@ -162,42 +154,37 @@ const Goals = () => {
   const getCurrentWeekProgress = () => {
     const recentDays = getRecentDays(7);
     const totalSteps = recentDays.reduce((sum, day) => sum + day.steps, 0);
-    const averageSteps = Math.round(totalSteps / 7);
     const goalsMet = recentDays.filter(day => day.goalMet).length;
+    const averageSteps = Math.round(totalSteps / 7);
+    const weeklyProgress = Math.round((totalSteps / weeklyGoal) * 100);
     
     return {
       totalSteps,
       averageSteps,
       goalsMet,
-      weeklyProgress: Math.round((totalSteps / weeklyGoal) * 100)
+      weeklyProgress
     };
   };
 
-
-
   const getTodayProgress = () => {
     const today = new Date().toISOString().split('T')[0];
-    const todaySteps = stepData[today] || 0;
-    const progress = Math.round((todaySteps / dailyGoal) * 100);
+    const steps = stepData[today] || 0;
+    const progress = Math.round((steps / dailyGoal) * 100);
+    const remaining = Math.max(0, dailyGoal - steps);
     
     return {
-      steps: todaySteps,
-      progress: Math.min(progress, 100),
-      remaining: Math.max(dailyGoal - todaySteps, 0)
+      steps,
+      progress,
+      remaining
     };
   };
 
   const getGoalStreak = () => {
+    const recentDays = getRecentDays(30); // Check last 30 days
     let streak = 0;
-    const today = new Date();
     
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateString = date.toISOString().split('T')[0];
-      const steps = stepData[dateString] || 0;
-      
-      if (steps >= dailyGoal) {
+    for (let i = recentDays.length - 1; i >= 0; i--) {
+      if (recentDays[i].goalMet) {
         streak++;
       } else {
         break;
@@ -216,7 +203,7 @@ const Goals = () => {
     return (
       <div className="container">
         <div className="main-content">
-          <div style={{ textAlign: 'center', padding: '40px', color: '#c9d1d9' }}>
+          <div className="text-center py-10 text-fithub-text">
             Loading goals data...
           </div>
         </div>
@@ -227,7 +214,7 @@ const Goals = () => {
   return (
     <div className="container">
       <div className="main-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div className="flex justify-between items-center mb-5">
           <div>
             <h1 className="contribution-title">Goals</h1>
             <p className="contribution-subtitle">
@@ -244,9 +231,9 @@ const Goals = () => {
         </div>
 
         {/* Goal Settings */}
-        <div className="contribution-section" style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 className="contribution-title" style={{ margin: 0 }}>Goal Settings</h2>
+        <div className="contribution-section mb-5">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="contribution-title m-0">Goal Settings</h2>
             {!isEditingGoals ? (
               <button
                 onClick={() => setIsEditingGoals(true)}
@@ -255,7 +242,7 @@ const Goals = () => {
                 Edit Goals
               </button>
             ) : (
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="flex gap-2">
                 <button
                   onClick={saveGoals}
                   className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer border-0 outline-none"
@@ -264,16 +251,7 @@ const Goals = () => {
                 </button>
                 <button
                   onClick={() => setIsEditingGoals(false)}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#c9d1d9',
-                    backgroundColor: '#21262d',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
+                  className="px-4 py-2 text-sm font-medium text-fithub-text bg-[#21262d] border border-fithub-light-grey rounded cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -281,15 +259,9 @@ const Goals = () => {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
             <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#f0f6fc' 
-              }}>
+              <label className="block mb-2 text-sm font-medium text-fithub-white">
                 Daily Goal
               </label>
               {isEditingGoals ? (
@@ -297,39 +269,17 @@ const Goals = () => {
                   type="number"
                   value={dailyGoal}
                   onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none'
-                  }}
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none"
                 />
               ) : (
-                <div style={{ 
-                  padding: '8px 12px', 
-                  fontSize: '14px', 
-                  color: '#c9d1d9',
-                  backgroundColor: '#161b22',
-                  border: '1px solid #30363d',
-                  borderRadius: '6px'
-                }}>
+                <div className="px-3 py-2 text-sm text-fithub-text bg-fithub-medium-grey border border-fithub-light-grey rounded">
                   {dailyGoal.toLocaleString()} steps
                 </div>
               )}
             </div>
 
             <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#f0f6fc' 
-              }}>
+              <label className="block mb-2 text-sm font-medium text-fithub-white">
                 Weekly Goal
               </label>
               {isEditingGoals ? (
@@ -337,172 +287,139 @@ const Goals = () => {
                   type="number"
                   value={weeklyGoal}
                   onChange={(e) => setWeeklyGoal(parseInt(e.target.value) || 0)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    backgroundColor: '#0d1117',
-                    border: '1px solid #30363d',
-                    borderRadius: '6px',
-                    color: '#c9d1d9',
-                    outline: 'none'
-                  }}
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none"
                 />
               ) : (
-                <div style={{ 
-                  padding: '8px 12px', 
-                  fontSize: '14px', 
-                  color: '#c9d1d9',
-                  backgroundColor: '#161b22',
-                  border: '1px solid #30363d',
-                  borderRadius: '6px'
-                }}>
+                <div className="px-3 py-2 text-sm text-fithub-text bg-fithub-medium-grey border border-fithub-light-grey rounded">
                   {weeklyGoal.toLocaleString()} steps
                 </div>
               )}
             </div>
-
-            
           </div>
         </div>
 
         {/* Goal Achievement Stats */}
-        <div className="contribution-section" style={{ marginBottom: '20px' }}>
-          <h2 className="contribution-title" style={{ margin: '0 0 16px 0' }}>Goal Achievement</h2>
+        <div className="contribution-section mb-5">
+          <h2 className="contribution-title mb-4">Goal Achievement</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#58a6ff', marginBottom: '4px' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
+            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-2xl font-bold text-blue-400 mb-1">
                 {currentStreak}
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Day Streak</div>
+              <div className="text-xs text-fithub-text">Day Streak</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#238636', marginBottom: '4px' }}>
+            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-2xl font-bold text-green-500 mb-1">
                 {weekProgress.goalsMet}/7
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Weekly Goals Met</div>
+              <div className="text-xs text-fithub-text">Weekly Goals Met</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#f0f6fc', marginBottom: '4px' }}>
+            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-2xl font-bold text-fithub-white mb-1">
                 {Math.round((weekProgress.goalsMet / 7) * 100)}%
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Weekly Success Rate</div>
+              <div className="text-xs text-fithub-text">Weekly Success Rate</div>
             </div>
           </div>
         </div>
 
         {/* Today's Progress */}
-        <div className="contribution-section" style={{ marginBottom: '20px' }}>
-          <h2 className="contribution-title" style={{ margin: '0 0 16px 0' }}>Today's Progress</h2>
+        <div className="contribution-section mb-5">
+          <h2 className="contribution-title mb-4">Today's Progress</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#58a6ff', marginBottom: '4px' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4 mb-4">
+            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-2xl font-bold text-blue-400 mb-1">
                 {todayProgress.steps.toLocaleString()}
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Steps Today</div>
+              <div className="text-xs text-fithub-text">Steps Today</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: todayProgress.progress >= 100 ? '#238636' : '#f85149', marginBottom: '4px' }}>
+            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className={`text-2xl font-bold mb-1 ${todayProgress.progress >= 100 ? 'text-green-500' : 'text-red-500'}`}>
                 {todayProgress.progress}%
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Goal Progress</div>
+              <div className="text-xs text-fithub-text">Goal Progress</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#f0f6fc', marginBottom: '4px' }}>
+            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-2xl font-bold text-fithub-white mb-1">
                 {todayProgress.remaining.toLocaleString()}
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Steps Remaining</div>
+              <div className="text-xs text-fithub-text">Steps Remaining</div>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div style={{ 
-            width: '100%', 
-            height: '8px', 
-            backgroundColor: '#21262d', 
-            borderRadius: '4px',
-            overflow: 'hidden'
-          }}>
+          <div className="w-full h-2 bg-[#21262d] rounded overflow-hidden">
             <div 
-              style={{ 
-                width: `${todayProgress.progress}%`, 
-                height: '100%', 
-                backgroundColor: todayProgress.progress >= 100 ? '#238636' : '#58a6ff',
-                transition: 'width 0.3s ease'
-              }}
+              className={`h-full transition-all duration-300 ease-in-out ${
+                todayProgress.progress >= 100 ? 'bg-green-500' : 'bg-blue-400'
+              }`}
+              style={{ width: `${todayProgress.progress}%` }}
             />
           </div>
         </div>
 
         {/* Weekly Progress */}
-        <div className="contribution-section" style={{ marginBottom: '20px' }}>
-          <h2 className="contribution-title" style={{ margin: '0 0 16px 0' }}>This Week's Progress</h2>
+        <div className="contribution-section mb-5">
+          <h2 className="contribution-title mb-4">This Week's Progress</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: '#58a6ff' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mb-4">
+            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-lg font-semibold text-blue-400">
                 {weekProgress.totalSteps.toLocaleString()}
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Total Steps</div>
+              <div className="text-xs text-fithub-text">Total Steps</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: '#f0f6fc' }}>
+            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-lg font-semibold text-fithub-white">
                 {weekProgress.averageSteps.toLocaleString()}
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Daily Average</div>
+              <div className="text-xs text-fithub-text">Daily Average</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: '#238636' }}>
+            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className="text-lg font-semibold text-green-500">
                 {weekProgress.goalsMet}/7
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Goals Met</div>
+              <div className="text-xs text-fithub-text">Goals Met</div>
             </div>
             
-            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: weekProgress.weeklyProgress >= 100 ? '#238636' : '#f85149' }}>
+            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+              <div className={`text-lg font-semibold ${weekProgress.weeklyProgress >= 100 ? 'text-green-500' : 'text-red-500'}`}>
                 {weekProgress.weeklyProgress}%
               </div>
-              <div style={{ fontSize: '12px', color: '#8b949e' }}>Weekly Goal</div>
+              <div className="text-xs text-fithub-text">Weekly Goal</div>
             </div>
           </div>
         </div>
 
-
-
         {/* Daily Progress Chart */}
         <div className="contribution-section">
-          <h2 className="contribution-title" style={{ margin: '0 0 16px 0' }}>Daily Progress Chart</h2>
+          <h2 className="contribution-title mb-4">Daily Progress Chart</h2>
           
-          <div style={{ display: 'flex', alignItems: 'end', gap: '8px', height: '120px', padding: '16px 0' }}>
+          <div className="flex items-end gap-2 h-30 py-4">
             {recentDays.map((day, index) => {
               const heightPercentage = Math.max((day.steps / Math.max(dailyGoal, Math.max(...recentDays.map(d => d.steps)))) * 100, 2);
               
               return (
-                <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div key={day.date} className="flex-1 flex flex-col items-center">
                   <div 
-                    style={{ 
-                      width: '100%', 
-                      height: `${heightPercentage}%`,
-                      backgroundColor: day.goalMet ? '#238636' : '#58a6ff',
-                      borderRadius: '2px 2px 0 0',
-                      minHeight: '4px',
-                      position: 'relative',
-                      marginBottom: '8px'
-                    }}
+                    className={`w-full rounded-t min-h-1 relative mb-2 transition-all duration-300 ${
+                      day.goalMet ? 'bg-green-500' : 'bg-blue-400'
+                    }`}
+                    style={{ height: `${heightPercentage}%` }}
                     title={`${day.steps.toLocaleString()} steps`}
                   />
-                  <div style={{ fontSize: '11px', color: '#8b949e', textAlign: 'center' }}>
+                  <div className="text-xs text-fithub-text text-center">
                     {day.dayName}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#7d8590', textAlign: 'center', marginTop: '2px' }}>
+                  <div className="text-xs text-fithub-text text-center mt-0.5">
                     {day.steps.toLocaleString()}
                   </div>
                 </div>
@@ -511,9 +428,9 @@ const Goals = () => {
           </div>
           
           {/* Goal Line Reference */}
-          <div style={{ fontSize: '12px', color: '#8b949e', marginTop: '8px', textAlign: 'center' }}>
-            <span style={{ color: '#238636' }}>■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
-            <span style={{ color: '#58a6ff' }}>■</span> Below Goal
+          <div className="text-xs text-fithub-text mt-2 text-center">
+            <span className="text-green-500">■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
+            <span className="text-blue-400">■</span> Below Goal
           </div>
         </div>
       </div>

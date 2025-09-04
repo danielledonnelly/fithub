@@ -8,12 +8,14 @@ import Goals from './pages/Goals';
 import Community from './pages/Community';
 import ProfilePage from './pages/ProfilePage';
 import Auth from './pages/Auth';
+import BaseStyles from './components/BaseStyles';
 
 function App() {
   return (
     <AuthProvider>
+      <BaseStyles />
       <Router>
-        <div className="App">
+        <div className="App min-h-screen bg-fithub-dark-grey text-fithub-text">
           <Header />
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -28,4 +30,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

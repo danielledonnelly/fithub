@@ -38,7 +38,7 @@ const LogStepsForm = ({ onSuccess }) => {
             value={date}
             onChange={e => setDate(e.target.value)}
             required
-            className="px-1.5 py-2 bg-fithub-dark-grey border border-fithub-medium-grey rounded text-gray-400 text-xs w-full h-8 border-0 outline-none focus:outline-none focus:ring-0"
+            className="px-1.5 py-2 bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded text-gray-400 text-xs w-full h-8 outline-none focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
           />
         </div>
         
@@ -52,7 +52,7 @@ const LogStepsForm = ({ onSuccess }) => {
             onChange={e => setSteps(e.target.value)}
             min="0"
             required
-            className="px-1.5 py-2 bg-fithub-dark-grey border border-fithub-medium-grey rounded text-gray-300 text-xs w-full h-8 border-0 outline-none focus:outline-none focus:ring-0"
+            className="px-1.5 py-2 bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded text-gray-300 text-xs w-full h-8 outline-none focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
           />
         </div>
       </div>

@@ -204,12 +204,10 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
               {week.map((day, dayIndex) => (
                 <div
                   key={`${weekIndex}-${dayIndex}`}
-                  className={`contribution-day ${day.level !== null ? `level-${day.level}` : ''}`}
+                  className={`contribution-day ${day.level !== null ? `level-${day.level}` : ''} ${
+                    day.isCurrentMonth ? 'opacity-100' : 'opacity-30'
+                  } ${day.level === null ? 'bg-fithub-medium-grey' : ''}`}
                   title={getTooltipText(day.date, day.steps)}
-                  style={{
-                    opacity: day.isCurrentMonth ? 1 : 0.3,
-                    backgroundColor: day.level === null ? '#161b22' : undefined
-                  }}
                 />
               ))}
             </div>

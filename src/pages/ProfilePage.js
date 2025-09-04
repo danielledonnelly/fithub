@@ -344,7 +344,7 @@ const ProfilePage = () => {
                 </div>
               </div>
               
-              <div style={{ flex: '0 0 200px' }}>
+              <div className="flex-shrink-0 w-50">
                 <label className="block mb-2 text-base font-medium text-gray-100">
                   Display Name
                 </label>
@@ -353,11 +353,11 @@ const ProfilePage = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-medium-grey rounded-md text-gray-300 outline-none border-0 focus:outline-none focus:ring-0"
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-gray-300 outline-none focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
                 />
               </div>
               
-              <div style={{ flex: '1' }}>
+              <div className="flex-1">
                 <label className="block mb-2 text-base font-medium text-gray-100">
                   Bio
                 </label>
@@ -366,53 +366,39 @@ const ProfilePage = () => {
                   value={formData.bio}
                   onChange={handleInputChange}
                   rows="1"
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-medium-grey rounded-md text-gray-300 outline-none resize-y border-0 focus:outline-none focus:ring-0"
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-gray-300 outline-none resize-y focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
                 />
               </div>
             </div>
 
 
 
-
-
-            
           </div>
         </div>
 
-        
-
+      
         {/* Fitness App Integrations Section */}
-        <div className="contribution-section" style={{ marginTop: '20px' }}>
+        <div className="contribution-section mt-5">
           <h2 className="contribution-title">Fitness App Integrations</h2>
           <p className="contribution-subtitle">
             Connect your fitness apps to automatically sync your step data
           </p>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '16px' }}>
+          <div className="flex flex-col gap-5 mt-4">
 
 
             {/* Fitbit Integration */}
-            <div style={{ 
-              padding: '16px', 
-              border: '1px solid #30363d', 
-              borderRadius: '8px',
-              backgroundColor: '#161b22'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', color: '#f0f6fc' }}>Fitbit</h3>
-                <div style={{ 
-                  padding: '8px 12px', 
-                  backgroundColor: fitbitStatus.connected ? '#28a745' : '#6c757d',
-                  color: '#ffffff',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '500'
-                }}>
+            <div className="p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="m-0 text-base text-fithub-white">Fitbit</h3>
+                <div className={`px-3 py-2 text-xs font-medium text-white rounded-md ${
+                  fitbitStatus.connected ? 'bg-green-600' : 'bg-gray-600'
+                }`}>
                   {fitbitStatus.connected ? 'Connected' : 'Not Connected'}
                 </div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="flex items-center gap-4">
                 {!fitbitStatus.connected ? (
                   <button
                     onClick={handleConnectFitbit}
@@ -422,8 +408,8 @@ const ProfilePage = () => {
                     {fitbitLoading ? 'Loading...' : 'Connect Fitbit'}
                   </button>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-400">
                       Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
                     </div>
 

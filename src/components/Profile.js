@@ -44,38 +44,15 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess 
         </div>
       </div>
       
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'row', 
-        gap: '12px',
-        minWidth: '400px',
-        maxWidth: '500px'
-      }}>
-        <div style={{
-          backgroundColor: '#161b22',
-          border: '1px solid #30363d',
-          borderRadius: '6px',
-          padding: '12px',
-          flex: '1'
-        }}>
-          <h3 style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#f0f6fc',
-            margin: '0 0 8px 0'
-          }}>
+      <div className="flex flex-row gap-3 min-w-[400px] max-w-[500px]">
+        <div className="bg-fithub-medium-grey border border-solid border-fithub-light-grey rounded p-3 flex-1">
+          <h3 className="text-sm font-semibold text-fithub-white mb-2 m-0">
             Log Steps
           </h3>
           <LogStepsForm onSuccess={onSuccess} />
         </div>
         
-        <div style={{
-          backgroundColor: '#161b22',
-          border: '1px solid #30363d',
-          borderRadius: '6px',
-          padding: '12px',
-          flex: '1'
-        }}>
+        <div className="bg-fithub-medium-grey border border-solid border-fithub-light-grey rounded p-3 flex-1">
           <ScreenshotUpload onSuccess={onSuccess} />
         </div>
       </div>

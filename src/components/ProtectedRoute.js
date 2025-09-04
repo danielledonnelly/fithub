@@ -10,14 +10,7 @@ const ProtectedRoute = ({ children }) => {
     return (
       <div className="container">
         <div className="main-content">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '200px',
-            fontSize: '16px',
-            color: '#c9d1d9'
-          }}>
+          <div className="flex justify-center items-center h-50 text-base text-fithub-text">
             Loading...
           </div>
         </div>
@@ -34,4 +27,4 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

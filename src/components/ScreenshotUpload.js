@@ -51,89 +51,33 @@ const ScreenshotUpload = ({ onSuccess }) => {
       
       <div className="flex flex-col gap-0.5">
 
-        <div style={{
-          position: 'relative',
-          display: 'inline-block',
-          width: '100%'
-        }}>
+        <div className="relative inline-block w-full">
           <input
             type="file"
             accept="image/*"
             onChange={handleFileUpload}
             disabled={uploading}
-            style={{
-              position: 'absolute',
-              opacity: 0,
-              width: '100%',
-              height: '100%',
-              cursor: uploading ? 'not-allowed' : 'pointer',
-              zIndex: 2
-            }}
+            className="absolute opacity-0 w-full h-full cursor-pointer z-10 disabled:cursor-not-allowed"
           />
-          <div style={{
-            padding: '8px 12px',
-            border: '2px dashed #30363d',
-            borderRadius: '6px',
-            backgroundColor: '#0d1117',
-            color: '#8b949e',
-            fontSize: '12px',
-            textAlign: 'center',
-            cursor: uploading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            borderColor: uploading ? '#30363d' : '#BB1F21',
-            backgroundColor: uploading ? '#161b22' : '#0d1117'
-          }}
-          onMouseEnter={(e) => {
-            if (!uploading) {
-              e.target.style.borderColor = '#a01a1c';
-              e.target.style.backgroundColor = '#161b22';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!uploading) {
-              e.target.style.borderColor = '#BB1F21';
-              e.target.style.backgroundColor = '#0d1117';
-            }
-          }}
-          >
+          <div className={`px-3 py-2 border-2 border-dashed rounded-md text-xs text-center transition-all duration-200 ${
+            uploading 
+              ? 'border-fithub-light-grey bg-fithub-medium-grey cursor-not-allowed' 
+              : 'border-fithub-light-grey bg-fithub-dark-grey cursor-pointer hover:border-gray-500 hover:bg-fithub-medium-grey'
+          }`}>
             {uploading ? 'Processing...' : 'Choose file or drag here'}
           </div>
         </div>
       </div>
       
       {uploading && (
-        <div style={{ 
-          color: '#7d8590', 
-          fontSize: '12px',
-          padding: '8px 12px',
-          backgroundColor: '#161b22',
-          border: '1px solid #30363d',
-          borderRadius: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            width: '12px',
-            height: '12px',
-            border: '2px solid #30363d',
-            borderTop: '2px solid #BB1F21',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
+        <div className="text-gray-400 text-xs px-3 py-2 bg-fithub-medium-grey border border-fithub-light-grey rounded-md flex items-center gap-2">
+          <div className="w-3 h-3 border-2 border-fithub-light-grey border-t-fithub-bright-red rounded-full animate-spin"></div>
           Processing image...
         </div>
       )}
       
       {error && (
-        <div style={{ 
-          color: '#f85149', 
-          fontSize: '12px',
-          padding: '8px 12px',
-          backgroundColor: '#da3633',
-          border: '1px solid #f85149',
-          borderRadius: '6px'
-        }}>
+        <div className="text-red-400 text-xs px-3 py-2 bg-red-900 border border-red-500 rounded-md">
           Error: {error}
         </div>
       )}

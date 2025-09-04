@@ -183,15 +183,21 @@ const RegisterForm = ({ onToggleForm, onSuccess }) => {
           {formData.password && (
             <div className="password-strength">
               <div 
-                className="password-strength-bar"
-                style={{ 
-                  width: `${(passwordStrength.strength / 4) * 100}%`,
-                  backgroundColor: passwordStrength.color
-                }}
+                className={`password-strength-bar h-1 rounded transition-all duration-300 ${
+                  passwordStrength.strength === 1 ? 'bg-red-500' :
+                  passwordStrength.strength === 2 ? 'bg-orange-500' :
+                  passwordStrength.strength === 3 ? 'bg-yellow-500' :
+                  passwordStrength.strength === 4 ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+                style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
               />
               <span 
-                className="password-strength-text"
-                style={{ color: passwordStrength.color }}
+                className={`password-strength-text text-sm font-medium ${
+                  passwordStrength.strength === 1 ? 'text-red-500' :
+                  passwordStrength.strength === 2 ? 'text-orange-500' :
+                  passwordStrength.strength === 3 ? 'text-yellow-500' :
+                  passwordStrength.strength === 4 ? 'text-green-500' : 'text-gray-400'
+                }`}
               >
                 {passwordStrength.text}
               </span>
