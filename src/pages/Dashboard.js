@@ -253,6 +253,9 @@ const Dashboard = () => {
         <div className="contribution-section">
           <div className="flex justify-between items-center mb-3 max-w-full">
             <h2 className="contribution-title m-0">Step Activity</h2>
+            <p className="contribution-subtitle m-0 text-fithub-white text-sm">
+              {activeDays} active days in the last year
+            </p>
             <div className="flex gap-2">
               <button
                 onClick={handleRefreshFitbitData}
@@ -266,9 +269,6 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
-          <p className="contribution-subtitle max-w-full">
-            {activeDays} active days in the last year
-          </p>
           
           <ContributionGraph 
             data={stepData}

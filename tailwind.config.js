@@ -24,6 +24,7 @@ module.exports = {
         'sans': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
         'mono': ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
       },
+      // Not currently used
       animation: {
         'shimmer': 'shimmer 2s infinite',
       },
@@ -198,9 +199,6 @@ module.exports = {
           'display': 'flex',
           'flex-direction': 'column',
           'gap': '8px',
-          'margin-bottom': '16px',
-          'transform': 'scale(0.8)',
-          'transform-origin': 'top left',
         },
         '.contribution-months': {
           'display': 'flex',
