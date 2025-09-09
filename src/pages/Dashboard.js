@@ -127,16 +127,57 @@ const Dashboard = () => {
       }
     };
 
+    const checkIfSyncActive = async () => {
+      try {
+        const token = localStorage.getItem('fithub_token');
+        if (token) {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/sync-status`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            return result.syncActive;
+          }
+        }
+      } catch (error) {
+        // Silent fail
+      }
+      return false;
+    };
+
+    const startConditionalPolling = async () => {
+      const isSyncActive = await checkIfSyncActive();
+      
+      if (isSyncActive) {
+        // Sync is active, start polling
+        console.log('Sync detected - starting live updates');
+        const pollInterval = setInterval(async () => {
+          if (!mounted) return;
+          
+          await refreshStepData();
+          
+          // Check if sync is still active
+          const stillActive = await checkIfSyncActive();
+          if (!stillActive) {
+            console.log('Sync completed - stopping live updates');
+            clearInterval(pollInterval);
+          }
+        }, 5000);
+      }
+    };
+
     // Initial fetch
     fetchStepData();
 
-    // Start polling every 5 seconds for live updates during sync
-    const pollInterval = setInterval(refreshStepData, 5000);
+    // Check if we need to start polling
+    startConditionalPolling();
 
     // Cleanup function - sets mounted to false when component unmounts
     return () => {
       mounted = false;
-      clearInterval(pollInterval);
     };
   }, []);
 

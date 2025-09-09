@@ -35,6 +35,19 @@ app.use('/api/auth', authRoutes);
 app.use('/api/steps', stepRoutes);
 app.use('/api/fitbit', fitbitRoutes);
 
+// Temporary test endpoint for cron - remove after testing
+app.get('/api/test-cron', async (req, res) => {
+  try {
+    const CronService = require('./services/CronService');
+    console.log('Manual cron test triggered...');
+    await CronService.syncRecentDaysForAllUsers();
+    res.json({ message: 'Cron test completed - check terminal logs' });
+  } catch (error) {
+    console.error('Manual cron test failed:', error);
+    res.status(500).json({ error: 'Cron test failed', message: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -60,4 +73,7 @@ app.listen(PORT, () => {
   console.log(`Steps endpoint: http://localhost:${PORT}/api/steps`);
   console.log(`Fitbit endpoints: http://localhost:${PORT}/api/fitbit`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-}); 
+});
+
+// Initialize cron jobs for background sync tasks
+require('./cron/scheduler'); 

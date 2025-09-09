@@ -167,6 +167,19 @@ class UserModel {
     return { id };
   }
 
+  // Get all users with active Fitbit connections for batch operations
+  static async getAllFitbitConnectedUsers() {
+    try {
+      const [rows] = await pool.query(
+        'SELECT id FROM users WHERE fitbit_connected = 1 AND fitbit_access_token IS NOT NULL'
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error getting Fitbit connected users:', error);
+      throw error;
+    }
+  }
+
   // Validate password (internal method)
   static async validatePassword(user, password) {
     const [rows] = await pool.query(

@@ -18,6 +18,9 @@ router.post('/sync', FitbitController.syncSteps);
 // Get connection status
 router.get('/status', FitbitController.getConnectionStatus);
 
+// Get sync status (whether sync is currently running)
+router.get('/sync-status', FitbitController.getSyncStatus);
+
 // Disconnect Fitbit
 router.post('/disconnect', FitbitController.disconnect);
 

@@ -228,6 +228,23 @@ class FitbitController {
     }
   }
 
+  // Check if sync is currently active for this user
+  static async getSyncStatus(req, res) {
+    try {
+      const userId = req.user.sub;
+      
+      res.json({
+        syncActive: activeSyncs.has(userId)
+      });
+    } catch (error) {
+      console.error("Error getting sync status:", error);
+      res.status(500).json({
+        error: "Failed to get sync status",
+        message: error.message,
+      });
+    }
+  }
+
   static async disconnect(req, res) {
     try {
       const userId = req.user.sub;
@@ -249,6 +266,55 @@ class FitbitController {
     } catch (error) {
       console.error('Disconnect error:', error);
       res.status(500).json({ message: "Error disconnecting Fitbit", error: error.message });
+    }
+  }
+
+  // Sync specific days for a user (used by cron jobs and manual updates)
+  static async syncSpecificDays(userId, daysArray) {
+    // Prevent concurrent syncs for the same user
+    if (activeSyncs.has(userId)) {
+      console.log(`Sync already running for user ${userId}, skipping specific days sync`);
+      return;
+    }
+    
+    activeSyncs.add(userId);
+    
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user?.fitbit_connected || !user?.fitbit_access_token) {
+        console.log(`User ${userId} no longer has Fitbit connected, skipping sync`);
+        return;
+      }
+      
+      const fitbitService = new FitbitService();
+      fitbitService.setCredentials({
+        access_token: user.fitbit_access_token,
+        refresh_token: user.fitbit_refresh_token
+      });
+
+      let syncedCount = 0;
+      for (const day of daysArray) {
+        try {
+          const stepData = await fitbitService.getStepData(day);
+          const StepModel = require('../models/Step');
+          // Update existing record or create new one
+          await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+          syncedCount++;
+          
+          // Conservative delay to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error) {
+          if (error.message.includes('429')) {
+            console.log(`Rate limit hit during specific days sync for user ${userId}`);
+            break;
+          }
+          console.error(`Error syncing ${day.toISOString().split('T')[0]} for user ${userId}:`, error.message);
+        }
+      }
+      
+      console.log(`Completed specific days sync for user ${userId}: ${syncedCount}/${daysArray.length} days`);
+    } finally {
+      activeSyncs.delete(userId);
     }
   }
 }
