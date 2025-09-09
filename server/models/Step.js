@@ -148,6 +148,23 @@ class StepModel {
       return false;
     }
   }
+
+  // Get sum of steps within a date range for a user
+  static async getStepsSumInRange(userId, startDate, endDate) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT SUM(COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0)) as totalSteps 
+         FROM steps 
+         WHERE user_id = ? AND date >= ? AND date <= ?`,
+        [userId, startDate, endDate]
+      );
+      
+      return rows[0]?.totalSteps || 0;
+    } catch (error) {
+      console.error('Error getting steps sum in range:', error);
+      return 0;
+    }
+  }
 }
 
 module.exports = StepModel;

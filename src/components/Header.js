@@ -28,37 +28,37 @@ const Header = () => {
               <nav className="nav">
                 <Link 
                   to="/" 
-                  className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+                  className={`nav-link text-sm lg:text-base ${location.pathname === '/' ? 'active' : ''}`}
                 >
                   Dashboard
                 </Link>
                 <Link 
                   to="/goals" 
-                  className={`nav-link ${location.pathname === '/goals' ? 'active' : ''}`}
+                  className={`nav-link text-sm lg:text-base ${location.pathname === '/goals' ? 'active' : ''}`}
                 >
                   Goals
                 </Link>
                 <Link 
                   to="/community" 
-                  className={`nav-link ${location.pathname === '/community' ? 'active' : ''}`}
+                  className={`nav-link text-sm lg:text-base ${location.pathname === '/community' ? 'active' : ''}`}
                 >
                   Community
                 </Link>
                 <Link 
                   to="/profile" 
-                  className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
+                  className={`nav-link text-sm lg:text-base ${location.pathname === '/profile' ? 'active' : ''}`}
                 >
                   Profile
                 </Link>
               </nav>
               
               <div className="header-user">
-                <span className="user-greeting">
+                <span className="user-greeting hidden md:inline">
                   Welcome, {user?.username || 'User'}
                 </span>
                 <button 
                   onClick={handleLogout}
-                  className="logout-button"
+                  className="logout-button text-sm lg:text-base"
                 >
                   Logout
                 </button>

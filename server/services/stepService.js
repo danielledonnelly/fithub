@@ -182,6 +182,47 @@ class StepService {
     return Object.keys(userData.stepData).length;
   }
 
+  // Get step statistics (weekly, monthly)
+  async getStepStats(userId) {
+    try {
+      const StepModel = require('../models/Step');
+      
+      // Calculate date ranges
+      const today = new Date();
+      const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+      
+      // Format dates for database query
+      const todayStr = today.toISOString().split('T')[0];
+      const weekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+      const monthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+      
+      console.log(`Calculating stats for user ${userId}:`);
+      console.log(`Today: ${todayStr}`);
+      console.log(`Week ago: ${weekAgoStr}`);
+      console.log(`Month ago: ${monthAgoStr}`);
+      
+      // Get weekly steps (last 7 days)
+      const weeklySteps = await StepModel.getStepsSumInRange(userId, weekAgoStr, todayStr);
+      console.log(`Weekly steps: ${weeklySteps}`);
+      
+      // Get monthly steps (last 30 days)
+      const monthlySteps = await StepModel.getStepsSumInRange(userId, monthAgoStr, todayStr);
+      console.log(`Monthly steps: ${monthlySteps}`);
+      
+      return {
+        weeklySteps,
+        monthlySteps
+      };
+    } catch (error) {
+      console.error('Error calculating step stats:', error);
+      return {
+        weeklySteps: 0,
+        monthlySteps: 0
+      };
+    }
+  }
+
   // Validate date format
   isValidDateFormat(date) {
     return /^\d{4}-\d{2}-\d{2}$/.test(date);

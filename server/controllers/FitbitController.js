@@ -36,7 +36,7 @@ class FitbitController {
         fitbit_connected: true,
         fitbit_connected_at: new Date(),
       });
-
+      
       // Sync will be triggered from dashboard load instead
 
       res.json({
@@ -84,7 +84,7 @@ class FitbitController {
         console.log(`Fitbit disconnected for user ${userId}, stopping sync`);
         return;
       }
-      
+
       const fitbitService = new FitbitService();
       fitbitService.setCredentials({
         access_token: user.fitbit_access_token,
@@ -146,7 +146,7 @@ class FitbitController {
               const currentUser = await UserModel.findById(userId);
               if (currentUser?.fitbit_connected && currentUser?.fitbit_access_token) {
                 FitbitController.startSync(userId);
-              } else {
+            } else {
                 console.log(`Fitbit disconnected during cooldown, not resuming sync`);
                 activeSyncs.delete(userId);
               }
@@ -201,7 +201,7 @@ class FitbitController {
           FitbitController.startSync(userId);
         }
       }
-      
+
       res.json({
         steps: localSteps,
         source: 'database'
@@ -232,7 +232,7 @@ class FitbitController {
   static async getSyncStatus(req, res) {
     try {
       const userId = req.user.sub;
-      
+
       res.json({
         syncActive: activeSyncs.has(userId)
       });
@@ -286,9 +286,9 @@ class FitbitController {
         return;
       }
       
-      const fitbitService = new FitbitService();
-      fitbitService.setCredentials({
-        access_token: user.fitbit_access_token,
+          const fitbitService = new FitbitService();
+          fitbitService.setCredentials({
+            access_token: user.fitbit_access_token,
         refresh_token: user.fitbit_refresh_token
       });
 
@@ -306,8 +306,8 @@ class FitbitController {
         } catch (error) {
           if (error.message.includes('429')) {
             console.log(`Rate limit hit during specific days sync for user ${userId}`);
-            break;
-          }
+                break;
+              }
           console.error(`Error syncing ${day.toISOString().split('T')[0]} for user ${userId}:`, error.message);
         }
       }

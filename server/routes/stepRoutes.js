@@ -13,6 +13,9 @@ router.get('/', StepController.getAllSteps);
 // Get step statistics with optional date filtering
 router.get('/stats/summary', StepController.getStepStats);
 
+// Get step statistics (weekly, monthly)
+router.get('/stats', StepController.getStepStats);
+
 // Test route to see if the controller is working
 router.get('/test', (req, res) => {
   res.json({ message: 'StepController is working' });

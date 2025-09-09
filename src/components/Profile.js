@@ -1,14 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import LogStepsForm from './LogStepsForm';
 import ScreenshotUpload from './ScreenshotUpload';
 
 const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess }) => {
+  const [weeklySteps, setWeeklySteps] = useState(0);
+  const [monthlySteps, setMonthlySteps] = useState(0);
+
   // Provide fallbacks for profile data
   const safeProfile = {
     name: profile?.name || '',
     bio: profile?.bio || '',
     avatar: profile?.avatar || ''
   };
+
+  // Fetch weekly and monthly step stats
+  useEffect(() => {
+    const fetchStepStats = async () => {
+      try {
+        const token = localStorage.getItem('fithub_token');
+        if (!token) return;
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps/stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const stats = await response.json();
+          setWeeklySteps(stats.weeklySteps || 0);
+          setMonthlySteps(stats.monthlySteps || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching step stats:', error);
+      }
+    };
+
+    fetchStepStats();
+  }, []);
 
   return (
     <div className="profile-section">
@@ -18,19 +47,19 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess 
           <h1 className="profile-name">{safeProfile.name}</h1>
           <p className="profile-bio">{safeProfile.bio}</p>
         </div>
-        <div className="profile-stats">
-          <div className="stat">
-            <div className="stat-number">{totalWorkouts || 0}</div>
-            <div className="stat-label">Total Workouts</div>
-          </div>
-          <div className="stat">
-            <div className="stat-number">{currentStreak || 0}</div>
-            <div className="stat-label">Current Streak</div>
-          </div>
-          <div className="stat">
-            <div className="stat-number">{(totalSteps || 0).toLocaleString()}</div>
-            <div className="stat-label">Total Steps</div>
-          </div>
+         <div className="profile-stats">
+           <div className="stat">
+             <div className="stat-number">{(Number(weeklySteps) || 0).toLocaleString()}</div>
+             <div className="stat-label">Weekly Steps</div>
+           </div>
+           <div className="stat">
+             <div className="stat-number">{(Number(monthlySteps) || 0).toLocaleString()}</div>
+             <div className="stat-label">Monthly Steps</div>
+           </div>
+           <div className="stat">
+             <div className="stat-number">{(totalSteps || 0).toLocaleString()}</div>
+             <div className="stat-label">Total Steps</div>
+           </div>
           {/* Commented out for now
           <div className="stat">
             <div className="stat-number">{profile.monthsActive}</div>

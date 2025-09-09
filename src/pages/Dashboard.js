@@ -346,18 +346,16 @@ const Dashboard = () => {
 
         <Profile 
           profile={profile}
-          totalWorkouts={activeDays}
           currentStreak={0}
           totalSteps={totalSteps}
           onSuccess={() => window.location.reload()}
         />
 
-
         
         <div className="contribution-section">
           <div className="flex justify-between items-center mb-3 max-w-full">
             <h2 className="contribution-title m-0">Step Activity</h2>
-            <p className="contribution-subtitle m-0 text-fithub-white text-sm">
+            <p className="contribution-subtitle m-0 text-fithub-white text-sm hidden md:block">
               {activeDays} active days in the last year
             </p>
             <div className="flex gap-2">

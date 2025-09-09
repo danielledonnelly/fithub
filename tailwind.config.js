@@ -114,26 +114,36 @@ module.exports = {
         '.profile-section': {
           'display': 'flex',
           'align-items': 'flex-start',
-          'gap': '24px',
-          'margin-bottom': '20px',
-          'padding': '16px 24px',
+          'gap': '16px',
+          'margin-bottom': '12px',
+          'padding': '12px 16px',
           'background-color': '#161b22',
           'border': '1px solid #30363d',
           'border-radius': '6px',
+          '@media (min-width: 768px)': {
+            'gap': '24px',
+            'padding': '16px 24px',
+          },
         },
         '.profile-avatar': {
-          'width': '80px',
-          'height': '80px',
+          'width': '60px',
+          'height': '60px',
           'border-radius': '50%',
           'background-color': '#30363d',
           'display': 'flex',
           'align-items': 'center',
           'justify-content': 'center',
-          'font-size': '32px',
+          'font-size': '24px',
           'color': '#7d8590',
           'flex-shrink': '0',
           'align-self': 'center',
-          'margin-top': '8px',
+          'margin-top': '4px',
+          '@media (min-width: 768px)': {
+            'width': '80px',
+            'height': '80px',
+            'font-size': '32px',
+            'margin-top': '8px',
+          },
         },
         '.profile-content': {
           'flex': '1',
@@ -148,10 +158,13 @@ module.exports = {
           'margin-bottom': '10px',
         },
         '.profile-name': {
-          'font-size': '24px',
+          'font-size': '20px',
           'font-weight': 'bold',
           'color': '#f0f6fc',
           'margin': '0 0 4px 0',
+          '@media (min-width: 768px)': {
+            'font-size': '24px',
+          },
         },
         '.profile-bio': {
           'color': '#8b949e',
@@ -161,8 +174,11 @@ module.exports = {
         },
         '.profile-stats': {
           'display': 'flex',
-          'gap': '22px',
+          'gap': '16px',
           'flex-wrap': 'wrap',
+          '@media (min-width: 768px)': {
+            'gap': '22px',
+          },
         },
         '.stat': {
           'display': 'flex',
@@ -170,13 +186,19 @@ module.exports = {
           'align-items': 'center',
         },
         '.stat-number': {
-          'font-size': '20px',
+          'font-size': '18px',
           'font-weight': 'bold',
           'color': '#f0f6fc',
+          '@media (min-width: 768px)': {
+            'font-size': '20px',
+          },
         },
         '.stat-label': {
-          'font-size': '12px',
+          'font-size': '11px',
           'color': '#8b949e',
+          '@media (min-width: 768px)': {
+            'font-size': '12px',
+          },
         },
         '.contribution-section': {
           'background-color': '#161b22',
@@ -292,28 +314,30 @@ module.exports = {
         '.contribution-legend': {
           'display': 'flex',
           'align-items': 'center',
-          'gap': '16px',
-          'font-size': '14px',
+          'gap': '14px',
+          'font-size': '12px',
           'color': '#7d8590',
         },
         '.legend-items': {
           'display': 'flex',
-          'gap': '12px',
+          'gap': '10px',
         },
         '.legend-item': {
           'display': 'flex',
           'flex-direction': 'column',
           'align-items': 'center',
-          'gap': '4px',
-          'min-width': '48px',
+          'gap': '3px',
+          'min-width': '52px',
+          'width': '52px',
           'span': {
-            'font-size': '16px',
+            'font-size': '12px',
             'color': '#7d8590',
             'white-space': 'nowrap',
+            'text-align': 'center',
           },
           '.contribution-day': {
-            'width': '20px',
-            'height': '20px',
+            'width': '18px',
+            'height': '18px',
             'padding-bottom': '0',
             'position': 'static',
           },

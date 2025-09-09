@@ -137,6 +137,19 @@ class StepController {
       });
     }
   }
+
+  // Get step statistics (weekly, monthly)
+  static async getStepStats(req, res) {
+    try {
+      const userId = req.user.sub;
+      
+      const stats = await StepService.getStepStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error getting step stats:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 console.log('StepController methods:', Object.getOwnPropertyNames(StepController));
