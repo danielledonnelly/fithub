@@ -116,17 +116,37 @@ class StepModel {
       [userId]
     );
     
-    const existingDates = new Set(rows.map(row => row.date));
+    const existingDates = new Set(rows.map(row => {
+      // Handle both string and Date object formats
+      const dateStr = row.date instanceof Date ? row.date.toISOString().split('T')[0] : row.date;
+      return dateStr;
+    }));
+    
+    console.log(`🔍 Checking historical sync for user ${userId}:`);
+    console.log(`📅 Have ${existingDates.size} existing dates`);
+    console.log(`📅 Checking from ${today.toISOString().split('T')[0]} back to ${januaryFirst.toISOString().split('T')[0]}`);
+    
+    let missingCount = 0;
+    let firstMissingDate = null;
     
     // Check if we're missing any days from Jan 1st to today
     for (let d = new Date(today); d >= januaryFirst; d.setDate(d.getDate() - 1)) {
       const dateStr = d.toISOString().split('T')[0];
       if (!existingDates.has(dateStr)) {
-        return true; // Missing at least one day
+        missingCount++;
+        if (!firstMissingDate) {
+          firstMissingDate = dateStr;
+        }
       }
     }
     
-    return false; // Have all days from Jan 1st to today
+    if (missingCount > 0) {
+      console.log(`❌ Missing ${missingCount} days, first missing: ${firstMissingDate}`);
+      return true;
+    } else {
+      console.log(`✅ All days from Jan 1st to today are synced`);
+      return false;
+    }
   }
 }
 
