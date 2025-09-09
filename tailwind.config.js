@@ -109,7 +109,7 @@ module.exports = {
           },
         },
         '.main-content': {
-          'padding': '20px 0',
+          'padding': '12px 0',
         },
         '.profile-section': {
           'display': 'flex',
@@ -182,7 +182,7 @@ module.exports = {
           'background-color': '#161b22',
           'border': '1px solid #30363d',
           'border-radius': '6px',
-          'padding': '20px 24px',
+          'padding': '12px 20px',
         },
         '.contribution-title': {
           'font-size': '18px',

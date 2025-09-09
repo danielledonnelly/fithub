@@ -94,6 +94,40 @@ class StepModel {
       minSteps: stats.minSteps || 0
     };
   }
+
+  // Check if user has zero total steps across all time
+  static async userHasZeroSteps(userId) {
+    const [rows] = await pool.query(
+      'SELECT SUM(inputted_steps + fitbit_steps) as totalSteps FROM steps WHERE user_id = ?',
+      [userId]
+    );
+    return (rows[0].totalSteps || 0) === 0;
+  }
+
+  // Check if user needs to complete sync to January 1st
+  static async userNeedsHistoricalSync(userId) {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const januaryFirst = new Date(currentYear, 0, 1);
+    
+    // Get all dates we've attempted to sync (any record exists)
+    const [rows] = await pool.query(
+      'SELECT date FROM steps WHERE user_id = ?',
+      [userId]
+    );
+    
+    const existingDates = new Set(rows.map(row => row.date));
+    
+    // Check if we're missing any days from Jan 1st to today
+    for (let d = new Date(today); d >= januaryFirst; d.setDate(d.getDate() - 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      if (!existingDates.has(dateStr)) {
+        return true; // Missing at least one day
+      }
+    }
+    
+    return false; // Have all days from Jan 1st to today
+  }
 }
 
 module.exports = StepModel;

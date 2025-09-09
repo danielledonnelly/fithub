@@ -51,7 +51,43 @@ const Dashboard = () => {
           setError(null);
         }
         
-        // Just load local step data - no auto-syncing
+        // Try to get combined step data (local + Fitbit) first
+        const token = localStorage.getItem('fithub_token');
+        if (token) {
+          try {
+            // First check if Fitbit is connected
+            const statusResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/status`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (statusResponse.ok) {
+              const status = await statusResponse.json();
+              if (status.connected) {
+                // Fitbit is connected, try to get combined data (this triggers auto-sync)
+                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  if (mounted) {
+                    setStepData(result.steps);
+                    console.log('Dashboard using combined step data:', result.source);
+                  }
+                  return;
+                }
+              }
+            }
+          } catch (fitbitError) {
+            console.log('Fitbit data not available, falling back to local data');
+          }
+        }
+        
+        // Fallback to local step data
         const data = await StepService.getAllSteps();
         if (mounted) {
           setStepData(data);
