@@ -105,11 +105,38 @@ const Dashboard = () => {
       }
     };
 
+    const refreshStepData = async () => {
+      try {
+        const token = localStorage.getItem('fithub_token');
+        if (token) {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (mounted) {
+              setStepData(result.steps);
+            }
+          }
+        }
+      } catch (error) {
+        // Silent fail for polling
+      }
+    };
+
+    // Initial fetch
     fetchStepData();
+
+    // Start polling every 5 seconds for live updates during sync
+    const pollInterval = setInterval(refreshStepData, 5000);
 
     // Cleanup function - sets mounted to false when component unmounts
     return () => {
       mounted = false;
+      clearInterval(pollInterval);
     };
   }, []);
 

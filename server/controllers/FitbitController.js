@@ -37,12 +37,7 @@ class FitbitController {
         fitbit_connected_at: new Date(),
       });
 
-      // Start sync if needed
-      const needsSync = await FitbitController.userNeedsSync(userId);
-      if (needsSync) {
-        console.log('Starting sync for new connection');
-        FitbitController.startSync(userId);
-      }
+      // Sync will be triggered from dashboard load instead
 
       res.json({
         message: "Fitbit connected successfully",
@@ -192,10 +187,20 @@ class FitbitController {
   static async getStepsForGraph(req, res) {
     try {
       const userId = req.user.sub;
+      const user = await UserModel.findById(userId);
       
-      // Just return database data - no API calls, no auto-sync triggers
+      // Get database steps
       const StepModel = require('../models/Step');
       const localSteps = await StepModel.getAllSteps(userId);
+      
+      // Auto-sync trigger: check if user has Fitbit connected and needs sync
+      if (user?.fitbit_connected && user?.fitbit_access_token) {
+        const needsSync = await FitbitController.userNeedsSync(userId);
+        if (needsSync && !activeSyncs.has(userId)) {
+          console.log('Auto-sync triggered from dashboard');
+          FitbitController.startSync(userId);
+        }
+      }
       
       res.json({
         steps: localSteps,
