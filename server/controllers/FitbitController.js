@@ -91,6 +91,13 @@ class FitbitController {
         refresh_token: user.fitbit_refresh_token
       });
 
+      // Proactively refresh token if it's getting old
+      try {
+        await FitbitController.ensureFreshTokens(userId, fitbitService);
+      } catch (error) {
+        console.log(`Could not refresh token proactively for user ${userId}, will handle on-demand`);
+      }
+
       // Get missing dates
       const today = new Date();
       const jan1 = new Date(today.getFullYear(), 0, 1);
@@ -153,7 +160,55 @@ class FitbitController {
             }, 65 * 60 * 1000);
             return; // Don't delete from activeSyncs - will resume later or be cleaned up
           }
-          console.error(`Error syncing ${day.toISOString().split('T')[0]}:`, error.message);
+          
+          // Handle expired token
+          if (error.code === 'FITBIT_EXPIRED_TOKEN') {
+            console.log(`Access token expired for user ${userId}, refreshing...`);
+            try {
+              const newTokens = await fitbitService.refreshAccessToken();
+              
+              // Update user with new tokens
+              await UserModel.updateUser(userId, {
+                fitbit_access_token: newTokens.access_token,
+                fitbit_refresh_token: newTokens.refresh_token
+              });
+              
+              console.log(`Token refreshed successfully for user ${userId}`);
+              
+              // Update service with new tokens
+              fitbitService.setCredentials({
+                access_token: newTokens.access_token,
+                refresh_token: newTokens.refresh_token
+              });
+              
+              // Retry the same day
+              const stepData = await fitbitService.getStepData(day);
+              const StepModel = require('../models/Step');
+              await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+              synced++;
+              
+              if (synced % 20 === 0) {
+                console.log(`${synced}/${daysToSync.length} days synced`);
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+            } catch (refreshError) {
+              console.error(`Failed to refresh token for user ${userId}:`, refreshError.message);
+              console.log(`Disconnecting Fitbit for user ${userId} due to refresh failure`);
+              
+              // Disconnect user's Fitbit if refresh fails
+              await UserModel.updateUser(userId, {
+                fitbit_access_token: null,
+                fitbit_refresh_token: null,
+                fitbit_connected: false
+              });
+              
+              return; // Stop sync
+            }
+          } else {
+            console.error(`Error syncing ${day.toISOString().split('T')[0]}:`, error.message);
+          }
         }
       }
       
@@ -228,6 +283,54 @@ class FitbitController {
     }
   }
 
+  // Helper method to ensure tokens are fresh before sync operations
+  static async ensureFreshTokens(userId, fitbitService) {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user?.fitbit_connected || !user?.fitbit_access_token) {
+        throw new Error('User not connected to Fitbit');
+      }
+
+      // Fitbit tokens expire after 8 hours
+      // Check if token was issued more than 7 hours ago to proactively refresh
+      const tokenAge = user.fitbit_connected_at ? 
+        Date.now() - new Date(user.fitbit_connected_at).getTime() : 
+        Infinity;
+      
+      const sevenHours = 7 * 60 * 60 * 1000;
+      
+      if (tokenAge > sevenHours) {
+        console.log(`Token for user ${userId} is ${Math.round(tokenAge / (60 * 60 * 1000))} hours old, refreshing...`);
+        
+        fitbitService.setCredentials({
+          access_token: user.fitbit_access_token,
+          refresh_token: user.fitbit_refresh_token
+        });
+        
+        const newTokens = await fitbitService.refreshAccessToken();
+        
+        await UserModel.updateUser(userId, {
+          fitbit_access_token: newTokens.access_token,
+          fitbit_refresh_token: newTokens.refresh_token,
+          fitbit_connected_at: new Date()
+        });
+        
+        fitbitService.setCredentials({
+          access_token: newTokens.access_token,
+          refresh_token: newTokens.refresh_token
+        });
+        
+        console.log(`Proactively refreshed token for user ${userId}`);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error(`Error ensuring fresh tokens for user ${userId}:`, error.message);
+      throw error;
+    }
+  }
+
   // Check if sync is currently active for this user
   static async getSyncStatus(req, res) {
     try {
@@ -286,11 +389,18 @@ class FitbitController {
         return;
       }
       
-          const fitbitService = new FitbitService();
-          fitbitService.setCredentials({
-            access_token: user.fitbit_access_token,
+      const fitbitService = new FitbitService();
+      fitbitService.setCredentials({
+        access_token: user.fitbit_access_token,
         refresh_token: user.fitbit_refresh_token
       });
+
+      // Proactively refresh token if it's getting old
+      try {
+        await FitbitController.ensureFreshTokens(userId, fitbitService);
+      } catch (error) {
+        console.log(`Could not refresh token proactively for user ${userId} during cron, will handle on-demand`);
+      }
 
       let syncedCount = 0;
       for (const day of daysArray) {
@@ -306,9 +416,53 @@ class FitbitController {
         } catch (error) {
           if (error.message.includes('429')) {
             console.log(`Rate limit hit during specific days sync for user ${userId}`);
-                break;
-              }
-          console.error(`Error syncing ${day.toISOString().split('T')[0]} for user ${userId}:`, error.message);
+            break;
+          }
+          
+          // Handle expired token
+          if (error.code === 'FITBIT_EXPIRED_TOKEN') {
+            console.log(`Access token expired for user ${userId} during cron sync, refreshing...`);
+            try {
+              const newTokens = await fitbitService.refreshAccessToken();
+              
+              // Update user with new tokens
+              await UserModel.updateUser(userId, {
+                fitbit_access_token: newTokens.access_token,
+                fitbit_refresh_token: newTokens.refresh_token
+              });
+              
+              console.log(`Token refreshed for user ${userId} during cron sync`);
+              
+              // Update service with new tokens
+              fitbitService.setCredentials({
+                access_token: newTokens.access_token,
+                refresh_token: newTokens.refresh_token
+              });
+              
+              // Retry the same day
+              const stepData = await fitbitService.getStepData(day);
+              const StepModel = require('../models/Step');
+              await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+              syncedCount++;
+              
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+            } catch (refreshError) {
+              console.error(`Failed to refresh token for user ${userId} during cron:`, refreshError.message);
+              console.log(`Disconnecting Fitbit for user ${userId} due to refresh failure`);
+              
+              // Disconnect user's Fitbit if refresh fails
+              await UserModel.updateUser(userId, {
+                fitbit_access_token: null,
+                fitbit_refresh_token: null,
+                fitbit_connected: false
+              });
+              
+              break; // Stop syncing for this user
+            }
+          } else {
+            console.error(`Error syncing ${day.toISOString().split('T')[0]} for user ${userId}:`, error.message);
+          }
         }
       }
       

@@ -9,7 +9,6 @@ import ScreenshotUpload from '../components/ScreenshotUpload';
 
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
-  const [loading, setLoading] = useState(true);
   const [fitbitSyncing, setFitbitSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState({
@@ -47,7 +46,6 @@ const Dashboard = () => {
     const fetchStepData = async () => {
       try {
         if (mounted) {
-          setLoading(true);
           setError(null);
         }
         
@@ -99,9 +97,7 @@ const Dashboard = () => {
           setStepData({});
         }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        // No longer need to manage loading state
       }
     };
 
@@ -206,7 +202,6 @@ const Dashboard = () => {
 
   const handleRegenerateData = async () => {
     try {
-      setLoading(true);
       setError(null);
 
       // First regenerate the data on the backend
@@ -218,8 +213,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to regenerate step data:', error);
       setError('Failed to regenerate step data. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -313,27 +306,40 @@ const Dashboard = () => {
     }
   };
 
-  const totalSteps = useMemo(() => {
-    if (!stepData || typeof stepData !== 'object') return 0;
-    return Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
-  }, [stepData]);
+  const [totalSteps, setTotalSteps] = useState(0);
 
-  const activeDays = useMemo(() => {
+  const [activeDays, setActiveDays] = useState(0);
+
+  // Fetch total steps from database (same calculation as weekly/monthly)
+  useEffect(() => {
+    const fetchTotalSteps = async () => {
+      try {
+        const token = localStorage.getItem('fithub_token');
+        if (!token) return;
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps/total-stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const stats = await response.json();
+          setTotalSteps(stats.totalSteps || 0);
+          setActiveDays(stats.activeDays || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching total stats:', error);
+      }
+    };
+
+    fetchTotalSteps();
+  }, [stepData]); // Re-fetch when step data changes
+
+  const activeDaysText = useMemo(() => {
     if (!stepData || typeof stepData !== 'object') return 0;
     return Object.values(stepData).filter(steps => steps > 0).length;
   }, [stepData]);
-
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="main-content">
-          <div className="flex justify-center items-center h-50 text-base text-c9d1d9">
-            Loading step data...
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container">

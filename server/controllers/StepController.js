@@ -150,6 +150,35 @@ class StepController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  static async getTotalStats(req, res) {
+    try {
+      const userId = req.user.sub;
+      const {pool} = require('../db');
+      const StepModel = require('../models/Step');
+      
+      // Calculate total steps (all-time)
+      const totalSteps = await StepModel.getStepsSumInRange(userId, '2020-01-01', new Date().toISOString().split('T')[0]);
+      
+      // Count active days (days with steps > 0)
+      const [rows] = await pool.query(
+        `SELECT COUNT(*) as activeDays 
+         FROM steps 
+         WHERE user_id = ? AND (COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0)) > 0`,
+        [userId]
+      );
+      
+      const activeDays = rows[0]?.activeDays || 0;
+      
+      res.json({
+        totalSteps,
+        activeDays
+      });
+    } catch (error) {
+      console.error('Error getting total stats:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 console.log('StepController methods:', Object.getOwnPropertyNames(StepController));

@@ -49,13 +49,27 @@ class StepModel {
     return { date, steps };
   }
 
-  // Update or insert Fitbit steps for a specific date (overwrites existing Fitbit steps)
+  // Update or insert Fitbit steps for a specific date (only updates if new steps are higher)
   static async updateFitbitSteps(userId, date, steps) {
     console.log('Updating Fitbit steps:', { userId, date, steps });
+    
+    // Only update if new steps are higher than existing steps (never overwrite with less data)
     const [result] = await pool.query(
-      'INSERT INTO steps (user_id, date, fitbit_steps) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE fitbit_steps = ?',
+      `INSERT INTO steps (user_id, date, fitbit_steps) 
+       VALUES (?, ?, ?) 
+       ON DUPLICATE KEY UPDATE fitbit_steps = GREATEST(fitbit_steps, ?)`,
       [userId, date, steps, steps]
     );
+    
+    // Log if we skipped an update due to lower steps
+    if (result.affectedRows === 0) {
+      console.log(`⚠️  Skipped update for ${date} - existing steps are higher than ${steps}`);
+    } else if (result.changedRows === 0) {
+      console.log(`ℹ️  No change for ${date} - new steps (${steps}) not higher than existing`);
+    } else {
+      console.log(`✅ Updated ${date} with ${steps} steps`);
+    }
+    
     return { date, steps };
   }
 
