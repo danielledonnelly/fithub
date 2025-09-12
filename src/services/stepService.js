@@ -97,6 +97,41 @@ class StepService {
       throw error;
     }
   }
+
+  async deleteAllSteps() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/steps/`, {
+        method: 'DELETE',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting all step data:', error);
+      throw error;
+    }
+  }
+
+  async getSyncProgress() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/fitbit/sync-progress`, {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching sync progress:', error);
+      throw error;
+    }
+  }
 }
 
 export default new StepService();

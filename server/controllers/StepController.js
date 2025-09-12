@@ -37,7 +37,7 @@ class StepController {
       
       const result = await StepService.updateSteps(userId, date, steps);
       res.json({ 
-        message: 'Steps updated successfully',
+        message: 'Steps added successfully',
         ...result
       });
     } catch (error) {
@@ -58,6 +58,22 @@ class StepController {
       } else {
         res.status(404).json({ error: 'No step data found for this date' });
       }
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // Delete all step data for a user
+  static async deleteAllSteps(req, res) {
+    try {
+      const userId = req.user.sub;
+      
+      const deletedCount = await StepService.deleteAllSteps(userId);
+      
+      res.json({ 
+        message: 'All step data deleted successfully', 
+        deletedCount 
+      });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -124,7 +140,7 @@ class StepController {
       console.log('Steps updated:', result);
       
       res.json({
-        message: 'Screenshot uploaded and steps updated successfully',
+        message: 'Screenshot uploaded and steps added successfully',
         steps: extractedSteps,
         date: today,
         filePath: imagePath

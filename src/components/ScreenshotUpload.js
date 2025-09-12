@@ -41,10 +41,10 @@ const ScreenshotUpload = ({ onSuccess }) => {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-col gap-0.5">
-        <h3 className="text-sm font-semibold text-gray-100 m-0">
+        <h3 className="text-sm font-semibold text-fithub-white m-0">
           Upload Screenshot
         </h3>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-fithub-text">
           Upload a screenshot of your fitness app to automatically extract step count.
         </p>
       </div>
@@ -70,14 +70,14 @@ const ScreenshotUpload = ({ onSuccess }) => {
       </div>
       
       {uploading && (
-        <div className="text-gray-400 text-xs px-3 py-2 bg-fithub-medium-grey border border-fithub-light-grey rounded-md flex items-center gap-2">
+        <div className="text-fithub-text text-xs px-3 py-2 bg-fithub-medium-grey border border-fithub-light-grey rounded-md flex items-center gap-2">
           <div className="w-3 h-3 border-2 border-fithub-light-grey border-t-fithub-bright-red rounded-full animate-spin"></div>
           Processing image...
         </div>
       )}
       
       {error && (
-        <div className="text-red-400 text-xs px-3 py-2 bg-red-900 border border-red-500 rounded-md">
+        <div className="text-fithub-bright-red text-xs px-3 py-2 bg-fithub-dark-red border border-fithub-red rounded-md">
           Error: {error}
         </div>
       )}

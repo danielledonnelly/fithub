@@ -10,6 +10,7 @@ import ScreenshotUpload from '../components/ScreenshotUpload';
 const Dashboard = () => {
   const [stepData, setStepData] = useState({});
   const [fitbitSyncing, setFitbitSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(null);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState({
     name: '',
@@ -74,6 +75,7 @@ const Dashboard = () => {
                   const result = await response.json();
                   if (mounted) {
                     setStepData(result.steps);
+                    setSyncProgress(result.syncProgress);
                     console.log('Dashboard using combined step data:', result.source);
                   }
                   return;
@@ -176,6 +178,64 @@ const Dashboard = () => {
       mounted = false;
     };
   }, []);
+
+  // Poll for sync progress when sync is active
+  useEffect(() => {
+    let intervalId;
+    
+    if (syncProgress && syncProgress.status === 'syncing') {
+      intervalId = setInterval(async () => {
+        try {
+          const progressData = await StepService.getSyncProgress();
+          if (progressData.isActive) {
+            setSyncProgress(progressData.progress);
+            
+            // Refresh step data every 5 syncs to show progress
+            if (progressData.progress && progressData.progress.completed % 5 === 0) {
+              const token = localStorage.getItem('fithub_token');
+              if (token) {
+                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  setStepData(result.steps);
+                }
+              }
+            }
+          } else {
+            // Sync completed, refresh data one final time
+            const token = localStorage.getItem('fithub_token');
+            if (token) {
+              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                setStepData(result.steps);
+                setSyncProgress(null);
+              }
+            }
+            clearInterval(intervalId);
+          }
+        } catch (error) {
+          console.error('Error polling sync progress:', error);
+        }
+      }, 2000); // Poll every 2 seconds
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [syncProgress]);
 
   const handleDayClick = async (date, steps) => {
     try {
@@ -345,8 +405,42 @@ const Dashboard = () => {
     <div className="container">
       <div className="main-content">
         {error && (
-          <div className="px-3 py-2 bg-red-600 border border-red-400 rounded text-white mb-5 text-sm">
+          <div className="px-3 py-2 bg-fithub-bright-red border border-fithub-red rounded text-fithub-white mb-5 text-sm">
             {error}
+          </div>
+        )}
+
+        {syncProgress && syncProgress.status === 'syncing' && (
+          <div className="px-3 py-2 bg-fithub-orange border border-fithub-peach rounded text-fithub-white mb-5 text-sm">
+            <div className="flex items-center justify-between">
+              <span>
+                Syncing Fitbit data... {syncProgress.completed}/{syncProgress.total} days
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-fithub-white opacity-80">
+                  Continues in background
+                </span>
+                <div className="w-4 h-4 border-2 border-fithub-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            </div>
+            <div className="w-full bg-fithub-bright-red rounded-full h-2 mt-2">
+              <div 
+                className="bg-fithub-white h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${(syncProgress.completed / syncProgress.total) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {syncProgress && syncProgress.status === 'rate_limited' && (
+          <div className="px-3 py-2 bg-fithub-dark-red border border-fithub-red rounded text-fithub-white mb-5 text-sm">
+            <div className="flex items-center justify-between">
+              <span>
+                Rate limited by Fitbit API. Sync will resume in {Math.ceil((syncProgress.cooldownUntil - Date.now()) / (60 * 1000))} minutes.
+                {syncProgress.reason && ` (${syncProgress.reason})`}
+              </span>
+              <div className="w-4 h-4 border-2 border-fithub-white border-t-transparent rounded-full animate-spin ml-2"></div>
+            </div>
           </div>
         )}
 
@@ -355,6 +449,7 @@ const Dashboard = () => {
           currentStreak={0}
           totalSteps={totalSteps}
           onSuccess={() => window.location.reload()}
+          stepData={stepData}
         />
 
         
@@ -367,13 +462,15 @@ const Dashboard = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleRefreshFitbitData}
-                disabled={fitbitSyncing}
+                disabled={fitbitSyncing || (syncProgress && syncProgress.status === 'rate_limited')}
                 className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none flex items-center gap-2"
               >
                 {fitbitSyncing && (
                   <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
                 )}
-                {fitbitSyncing ? 'Syncing...' : 'Sync Fitbit'}
+                {fitbitSyncing ? 'Syncing...' : 
+                 (syncProgress && syncProgress.status === 'rate_limited') ? 'Rate Limited' : 
+                 'Sync Fitbit'}
               </button>
             </div>
           </div>

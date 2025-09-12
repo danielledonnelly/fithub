@@ -27,4 +27,7 @@ router.post('/disconnect', FitbitController.disconnect);
 // Get steps for contribution graph
 router.get('/steps-for-graph', FitbitController.getStepsForGraph);
 
+// Get sync progress
+router.get('/sync-progress', FitbitController.getSyncProgress);
+
 module.exports = router;

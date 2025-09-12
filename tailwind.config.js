@@ -18,6 +18,9 @@ module.exports = {
           'dark-red': '#662020',
           'brown': '#34181c',
           'bright-red': '#bb1f21',
+          'orange': '#ff462d',
+          'peach': '#ff722d',
+          'yellow': '#ff982d',
         }
       },
       fontFamily: {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProfileService from '../services/ProfileService';
+import StepService from '../services/StepService';
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState({
@@ -24,6 +25,7 @@ const ProfilePage = () => {
   });
   const [fitbitLoading, setFitbitLoading] = useState(false);
   const [fitbitSyncLoading, setFitbitSyncLoading] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   // Load profile from database
   useEffect(() => {
@@ -274,6 +276,29 @@ const ProfilePage = () => {
     }
   };
 
+  // Handle delete all steps
+  const handleDeleteAllSteps = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete ALL your step data? This action cannot be undone and will remove all your step history.'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      setDeleteAllLoading(true);
+      const result = await StepService.deleteAllSteps();
+      
+      setSaveMessage(`Successfully deleted ${result.deletedCount} step records. All your step data has been removed.`);
+      setTimeout(() => setSaveMessage(''), 5000);
+    } catch (error) {
+      console.error('Error deleting all steps:', error);
+      setSaveMessage('Failed to delete step data. Please try again.');
+      setTimeout(() => setSaveMessage(''), 5000);
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
 
 
   return (
@@ -298,12 +323,12 @@ const ProfilePage = () => {
           <div className="grid gap-5 max-w-4xl">
             <div className="flex gap-8 items-start">
               <div>
-                <label className="block mb-2 text-base font-medium text-gray-100">
+                <label className="block mb-2 text-base font-medium text-fithub-white">
                   Avatar
                 </label>
                 <div className="flex flex-col items-center gap-2">
                   <div 
-                    className="w-16 h-16 flex items-center justify-center text-2xl text-gray-500 bg-gray-600 border border-gray-600 rounded-full overflow-hidden cursor-pointer hover:bg-gray-500 transition-colors"
+                    className="w-16 h-16 flex items-center justify-center text-2xl text-fithub-text bg-fithub-light-grey border border-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-medium-grey transition-colors"
                     onClick={() => document.getElementById('avatar-upload').click()}
                   >
                     {formData.avatar && formData.avatar.startsWith('data:') ? (
@@ -317,7 +342,7 @@ const ProfilePage = () => {
                         }}
                       />
                     ) : null}
-                    <div className="w-full h-full flex items-center justify-center text-2xl text-gray-500 bg-gray-600">
+                    <div className="w-full h-full flex items-center justify-center text-2xl text-fithub-text bg-fithub-light-grey">
                       {formData.avatar && !formData.avatar.startsWith('data:') ? formData.avatar : '?'}
                     </div>
                   </div>
@@ -345,7 +370,7 @@ const ProfilePage = () => {
               </div>
               
               <div className="flex-shrink-0 w-50">
-                <label className="block mb-2 text-base font-medium text-gray-100">
+                <label className="block mb-2 text-base font-medium text-fithub-white">
                   Display Name
                 </label>
                 <input
@@ -353,12 +378,12 @@ const ProfilePage = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-gray-300 outline-none focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
                 />
               </div>
               
               <div className="flex-1">
-                <label className="block mb-2 text-base font-medium text-gray-100">
+                <label className="block mb-2 text-base font-medium text-fithub-white">
                   Bio
                 </label>
                 <textarea
@@ -366,7 +391,7 @@ const ProfilePage = () => {
                   value={formData.bio}
                   onChange={handleInputChange}
                   rows="1"
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-gray-300 outline-none resize-y focus:outline-none focus:ring-0 focus:border-gray-500 transition-colors"
+                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none resize-y focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
                 />
               </div>
             </div>
@@ -391,8 +416,8 @@ const ProfilePage = () => {
             <div className="p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="m-0 text-base text-fithub-white">Fitbit</h3>
-                <div className={`px-3 py-2 text-xs font-medium text-white rounded-md ${
-                  fitbitStatus.connected ? 'bg-green-600' : 'bg-gray-600'
+                <div className={`px-3 py-2 text-xs font-medium text-fithub-white rounded-md ${
+                  fitbitStatus.connected ? 'bg-fithub-orange' : 'bg-fithub-dark-red'
                 }`}>
                   {fitbitStatus.connected ? 'Connected' : 'Not Connected'}
                 </div>
@@ -409,18 +434,47 @@ const ProfilePage = () => {
                   </button>
                 ) : (
                   <div className="flex items-center gap-4">
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-fithub-text">
                       Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
                     </div>
 
                     <button
                       onClick={handleDisconnectFitbit}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-dark-red rounded cursor-pointer hover:bg-fithub-brown border-0 outline-none"
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
                     >
                       Disconnect
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Management Section */}
+        <div className="contribution-section mt-5">
+          <h2 className="contribution-title">Data Management</h2>
+          <p className="contribution-subtitle">
+            Manage your step data and account information
+          </p>
+          
+          <div className="flex flex-col gap-5 mt-4">
+            {/* Delete All Steps */}
+            <div className="p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <h3 className="m-0 text-base text-fithub-white">Delete All Step Data</h3>
+                  <p className="text-sm text-fithub-text mt-1">
+                    Permanently remove all your step history. This action cannot be undone.
+                  </p>
+                </div>
+                <button
+                  onClick={handleDeleteAllSteps}
+                  disabled={deleteAllLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
+                >
+                  {deleteAllLoading ? 'Deleting...' : 'Delete All Data'}
+                </button>
               </div>
             </div>
           </div>

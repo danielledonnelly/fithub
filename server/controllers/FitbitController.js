@@ -4,6 +4,8 @@ const {pool} = require('../db');
 
 // Simple sync tracker
 const activeSyncs = new Set();
+const syncProgress = new Map(); // Track sync progress for each user
+const rateLimitCooldowns = new Map(); // Track rate limit cooldowns: userId -> { until: timestamp, reason: string }
 
 class FitbitController {
   static async getAuthUrl(req, res) {
@@ -65,12 +67,49 @@ class FitbitController {
         return true;
       }
     }
+    
+    // Check if any of the past 3 days have 0 total steps
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 2); // Today, yesterday, day before = 3 days
+    
+    const [recentRows] = await pool.query(
+      `SELECT date, COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0) as total_steps 
+       FROM steps 
+       WHERE user_id = ? AND date >= ? AND date <= ?`,
+      [userId, threeDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]]
+    );
+    
+    for (const row of recentRows) {
+      if (row.total_steps === 0) {
+        console.log(`Sync needed: ${row.date} has 0 steps`);
+        return true;
+      }
+    }
+    
     return false;
   }
 
   static async startSync(userId) {
     if (activeSyncs.has(userId)) {
       return; // Already syncing
+    }
+    
+    // Check if user is in rate limit cooldown
+    const cooldown = rateLimitCooldowns.get(userId);
+    if (cooldown && Date.now() < cooldown.until) {
+      const remainingMinutes = Math.ceil((cooldown.until - Date.now()) / (60 * 1000));
+      console.log(`User ${userId} is in rate limit cooldown for ${remainingMinutes} more minutes. Reason: ${cooldown.reason}`);
+      
+      // Update sync progress to show rate limit status
+      syncProgress.set(userId, {
+        total: 0,
+        completed: 0,
+        current: null,
+        status: 'rate_limited',
+        cooldownUntil: cooldown.until,
+        reason: cooldown.reason
+      });
+      return;
     }
     
     activeSyncs.add(userId);
@@ -98,7 +137,7 @@ class FitbitController {
         console.log(`Could not refresh token proactively for user ${userId}, will handle on-demand`);
       }
 
-      // Get missing dates
+      // Get missing dates and recent days with 0 steps
       const today = new Date();
       const jan1 = new Date(today.getFullYear(), 0, 1);
       
@@ -108,10 +147,30 @@ class FitbitController {
       const existingDates = new Set(rows.map(r => r.date.toISOString().split('T')[0]));
       
       const daysToSync = [];
+      
+      // Check for missing dates from Jan 1st to today
       for (let d = new Date(today); d >= jan1; d.setDate(d.getDate() - 1)) {
         const dateStr = d.toISOString().split('T')[0];
         if (!existingDates.has(dateStr)) {
           daysToSync.push(new Date(d));
+        }
+      }
+      
+      // Check for recent days (past 3 days) with 0 steps
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
+      
+      const [recentRows] = await pool.query(
+        `SELECT date, COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0) as total_steps 
+         FROM steps 
+         WHERE user_id = ? AND date >= ? AND date <= ?`,
+        [userId, threeDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]]
+      );
+      
+      for (const row of recentRows) {
+        if (row.total_steps === 0) {
+          const dateObj = new Date(row.date);
+          daysToSync.push(dateObj);
         }
       }
 
@@ -120,7 +179,15 @@ class FitbitController {
         return;
       }
 
-      console.log(`Syncing ${daysToSync.length} missing days`);
+      console.log(`Syncing ${daysToSync.length} days (missing or with 0 steps)`);
+      
+      // Initialize sync progress
+      syncProgress.set(userId, {
+        total: daysToSync.length,
+        completed: 0,
+        current: null,
+        status: 'syncing'
+      });
       
       let synced = 0;
       for (const day of daysToSync) {
@@ -132,33 +199,103 @@ class FitbitController {
         }
         
         try {
+          // Update progress
+          syncProgress.set(userId, {
+            total: daysToSync.length,
+            completed: synced,
+            current: day.toISOString().split('T')[0],
+            status: 'syncing'
+          });
+          
           const stepData = await fitbitService.getStepData(day);
           const StepModel = require('../models/Step');
-          await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+          // Convert Date object to YYYY-MM-DD string for database
+          const dateStr = day.toISOString().split('T')[0];
+          console.log(`📅 Syncing ${dateStr}: ${stepData.steps || 0} steps from Fitbit`);
+          await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
           synced++;
           
-          // Progress every 20 days
-          if (synced % 20 === 0) {
+          // Update progress after successful sync
+          syncProgress.set(userId, {
+            total: daysToSync.length,
+            completed: synced,
+            current: null,
+            status: 'syncing'
+          });
+          
+          // Progress every 5 days for more frequent updates
+          if (synced % 5 === 0) {
             console.log(`${synced}/${daysToSync.length} days synced`);
           }
           
-          // Rate limit protection: 1 request every 3 seconds
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          // Rate limit protection: 150 requests per hour = ~24 seconds between requests
+          // But we'll be more aggressive: 1 request every 2.5 seconds (144 requests/hour)
+          await new Promise(resolve => setTimeout(resolve, 2500));
           
         } catch (error) {
+          console.error(`Error syncing ${day.toISOString().split('T')[0]}:`, error.message);
+          
           if (error.message.includes('429') || error.message.includes('rate limit')) {
-            console.log(`Rate limit hit. Resuming in 65 minutes...`);
+            console.log(`Rate limit hit. Stopping sync and setting 60-minute cooldown...`);
+            activeSyncs.delete(userId); // Stop current sync immediately
+            
+            // Set rate limit cooldown
+            const cooldownUntil = Date.now() + (60 * 60 * 1000); // 60 minutes from now
+            rateLimitCooldowns.set(userId, {
+              until: cooldownUntil,
+              reason: 'Fitbit API rate limit exceeded'
+            });
+            
+            // Update sync progress to show rate limit status
+            syncProgress.set(userId, {
+              total: daysToSync.length,
+              completed: synced,
+              current: null,
+              status: 'rate_limited',
+              cooldownUntil: cooldownUntil,
+              reason: 'Fitbit API rate limit exceeded'
+            });
+            
+            // Set timeout to clear cooldown and potentially resume
             setTimeout(async () => {
-              // Check if Fitbit is still connected before resuming
+              rateLimitCooldowns.delete(userId);
+              console.log(`Rate limit cooldown expired for user ${userId}`);
+              
+              // Check if Fitbit is still connected and if sync is still needed
               const currentUser = await UserModel.findById(userId);
               if (currentUser?.fitbit_connected && currentUser?.fitbit_access_token) {
-                FitbitController.startSync(userId);
-            } else {
+                const stillNeedsSync = await FitbitController.userNeedsSync(userId);
+                if (stillNeedsSync) {
+                  console.log(`Resuming sync after rate limit cooldown...`);
+                  FitbitController.startSync(userId);
+                } else {
+                  console.log(`No sync needed after cooldown for user ${userId}`);
+                }
+              } else {
                 console.log(`Fitbit disconnected during cooldown, not resuming sync`);
-                activeSyncs.delete(userId);
               }
-            }, 65 * 60 * 1000);
-            return; // Don't delete from activeSyncs - will resume later or be cleaned up
+            }, 60 * 60 * 1000);
+            return; // Exit the sync loop
+          }
+          
+          // For other errors, retry once with exponential backoff
+          if (!error.retried) {
+            console.log(`Retrying ${day.toISOString().split('T')[0]} after error...`);
+            try {
+              await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+              const stepData = await fitbitService.getStepData(day);
+              const StepModel = require('../models/Step');
+              // Convert Date object to YYYY-MM-DD string for database
+              const dateStr = day.toISOString().split('T')[0];
+              await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
+              synced++;
+              console.log(`✅ Retry successful for ${day.toISOString().split('T')[0]}`);
+            } catch (retryError) {
+              console.error(`Retry failed for ${day.toISOString().split('T')[0]}:`, retryError.message);
+              // Continue to next day instead of skipping
+            }
+          } else {
+            console.error(`Final failure for ${day.toISOString().split('T')[0]} - skipping`);
           }
           
           // Handle expired token
@@ -184,7 +321,9 @@ class FitbitController {
               // Retry the same day
               const stepData = await fitbitService.getStepData(day);
               const StepModel = require('../models/Step');
-              await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+              // Convert Date object to YYYY-MM-DD string for database
+              const dateStr = day.toISOString().split('T')[0];
+              await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
               synced++;
               
               if (synced % 20 === 0) {
@@ -214,8 +353,34 @@ class FitbitController {
       
       console.log(`Sync complete - ${synced} days synced`);
       
+      // Mark sync as completed
+      syncProgress.set(userId, {
+        total: daysToSync.length,
+        completed: synced,
+        current: null,
+        status: 'completed'
+      });
+      
+      // Clear progress after 30 seconds
+      setTimeout(() => {
+        syncProgress.delete(userId);
+      }, 30000);
+      
     } catch (error) {
       console.error(`Sync failed:`, error.message);
+      
+      // Mark sync as failed
+      syncProgress.set(userId, {
+        total: daysToSync.length,
+        completed: synced,
+        current: null,
+        status: 'failed'
+      });
+      
+      // Clear progress after 30 seconds
+      setTimeout(() => {
+        syncProgress.delete(userId);
+      }, 30000);
     } finally {
       activeSyncs.delete(userId);
     }
@@ -248,22 +413,63 @@ class FitbitController {
       const StepModel = require('../models/Step');
       const localSteps = await StepModel.getAllSteps(userId);
       
-      // Auto-sync trigger: check if user has Fitbit connected and needs sync
-      if (user?.fitbit_connected && user?.fitbit_access_token) {
-        const needsSync = await FitbitController.userNeedsSync(userId);
-        if (needsSync && !activeSyncs.has(userId)) {
-          console.log('Auto-sync triggered from dashboard');
-          FitbitController.startSync(userId);
+      // Auto-sync trigger: check if sync is needed when dashboard is refreshed
+      if (user?.fitbit_connected && user?.fitbit_access_token && !activeSyncs.has(userId)) {
+        // Check if user is in rate limit cooldown
+        const cooldown = rateLimitCooldowns.get(userId);
+        if (cooldown && Date.now() < cooldown.until) {
+          const remainingMinutes = Math.ceil((cooldown.until - Date.now()) / (60 * 1000));
+          console.log(`Auto-sync blocked: User ${userId} in rate limit cooldown for ${remainingMinutes} more minutes`);
+          
+          // Update sync progress to show rate limit status
+          syncProgress.set(userId, {
+            total: 0,
+            completed: 0,
+            current: null,
+            status: 'rate_limited',
+            cooldownUntil: cooldown.until,
+            reason: cooldown.reason
+          });
+        } else {
+          // Run sync check in background to avoid blocking the response
+          setImmediate(async () => {
+            const needsSync = await FitbitController.userNeedsSync(userId);
+            if (needsSync) {
+              console.log('Auto-sync triggered from dashboard - historical sync needed');
+              await FitbitController.startSync(userId);
+            } else {
+              console.log('Auto-sync check: No sync needed');
+            }
+          });
         }
+      } else if (activeSyncs.has(userId)) {
+        console.log('Sync already in progress, skipping auto-sync');
       }
 
       res.json({
         steps: localSteps,
-        source: 'database'
+        source: 'database',
+        syncProgress: syncProgress.get(userId) || null
       });
     } catch (error) {
       console.error('Graph data error:', error);
       res.status(500).json({ message: "Error fetching step data", error: error.message });
+    }
+  }
+
+  // Get sync progress for a user
+  static async getSyncProgress(req, res) {
+    try {
+      const userId = req.user.sub;
+      const progress = syncProgress.get(userId);
+      
+      res.json({
+        progress: progress || null,
+        isActive: activeSyncs.has(userId)
+      });
+    } catch (error) {
+      console.error('Sync progress error:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -407,8 +613,9 @@ class FitbitController {
         try {
           const stepData = await fitbitService.getStepData(day);
           const StepModel = require('../models/Step');
-          // Update existing record or create new one
-          await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+          // Convert Date object to YYYY-MM-DD string for database
+          const dateStr = day.toISOString().split('T')[0];
+          await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
           syncedCount++;
           
           // Conservative delay to respect rate limits
@@ -442,7 +649,8 @@ class FitbitController {
               // Retry the same day
               const stepData = await fitbitService.getStepData(day);
               const StepModel = require('../models/Step');
-              await StepModel.updateFitbitSteps(userId, day, stepData.steps || 0);
+              const dateStr = day.toISOString().split('T')[0];
+              await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
               syncedCount++;
               
               await new Promise(resolve => setTimeout(resolve, 2000));

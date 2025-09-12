@@ -304,14 +304,14 @@ const Goals = () => {
           
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-blue-400 mb-1">
+              <div className="text-2xl font-bold text-fithub-bright-red mb-1">
                 {currentStreak}
               </div>
               <div className="text-xs text-fithub-text">Day Streak</div>
             </div>
             
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-green-500 mb-1">
+              <div className="text-2xl font-bold text-fithub-bright-red mb-1">
                 {weekProgress.goalsMet}/7
               </div>
               <div className="text-xs text-fithub-text">Weekly Goals Met</div>
@@ -332,14 +332,14 @@ const Goals = () => {
           
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4 mb-4">
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-blue-400 mb-1">
+              <div className="text-2xl font-bold text-fithub-bright-red mb-1">
                 {todayProgress.steps.toLocaleString()}
               </div>
               <div className="text-xs text-fithub-text">Steps Today</div>
             </div>
             
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className={`text-2xl font-bold mb-1 ${todayProgress.progress >= 100 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text-2xl font-bold mb-1 ${todayProgress.progress >= 100 ? 'text-fithub-bright-red' : 'text-fithub-bright-red'}`}>
                 {todayProgress.progress}%
               </div>
               <div className="text-xs text-fithub-text">Goal Progress</div>
@@ -357,7 +357,7 @@ const Goals = () => {
           <div className="w-full h-2 bg-[#21262d] rounded overflow-hidden">
             <div 
               className={`h-full transition-all duration-300 ease-in-out ${
-                todayProgress.progress >= 100 ? 'bg-green-500' : 'bg-blue-400'
+                todayProgress.progress >= 100 ? 'bg-fithub-bright-red' : 'bg-fithub-bright-red'
               }`}
               style={{ width: `${todayProgress.progress}%` }}
             />
@@ -370,7 +370,7 @@ const Goals = () => {
           
           <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mb-4">
             <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-blue-400">
+              <div className="text-lg font-semibold text-fithub-bright-red">
                 {weekProgress.totalSteps.toLocaleString()}
               </div>
               <div className="text-xs text-fithub-text">Total Steps</div>
@@ -384,14 +384,14 @@ const Goals = () => {
             </div>
             
             <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-green-500">
+              <div className="text-lg font-semibold text-fithub-bright-red">
                 {weekProgress.goalsMet}/7
               </div>
               <div className="text-xs text-fithub-text">Goals Met</div>
             </div>
             
             <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className={`text-lg font-semibold ${weekProgress.weeklyProgress >= 100 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text-lg font-semibold ${weekProgress.weeklyProgress >= 100 ? 'text-fithub-bright-red' : 'text-fithub-bright-red'}`}>
                 {weekProgress.weeklyProgress}%
               </div>
               <div className="text-xs text-fithub-text">Weekly Goal</div>
@@ -411,7 +411,7 @@ const Goals = () => {
                 <div key={day.date} className="flex-1 flex flex-col items-center">
                   <div 
                     className={`w-full rounded-t min-h-1 relative mb-2 transition-all duration-300 ${
-                      day.goalMet ? 'bg-green-500' : 'bg-blue-400'
+                      day.goalMet ? 'bg-fithub-bright-red' : 'bg-fithub-bright-red'
                     }`}
                     style={{ height: `${heightPercentage}%` }}
                     title={`${day.steps.toLocaleString()} steps`}
@@ -429,8 +429,8 @@ const Goals = () => {
           
           {/* Goal Line Reference */}
           <div className="text-xs text-fithub-text mt-2 text-center">
-            <span className="text-green-500">■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
-            <span className="text-blue-400">■</span> Below Goal
+            <span className="text-fithub-bright-red">■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
+            <span className="text-fithub-bright-red">■</span> Below Goal
           </div>
         </div>
       </div>

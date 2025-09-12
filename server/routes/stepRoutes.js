@@ -39,4 +39,7 @@ router.put('/:date', StepController.updateSteps);
 // Delete step data for a specific date
 router.delete('/:date', StepController.deleteSteps);
 
+// Delete all step data for a user
+router.delete('/', StepController.deleteAllSteps);
+
 module.exports = router;

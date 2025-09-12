@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LogStepsForm from './LogStepsForm';
 import ScreenshotUpload from './ScreenshotUpload';
 
-const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess }) => {
+const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess, stepData }) => {
   const [weeklySteps, setWeeklySteps] = useState(0);
   const [monthlySteps, setMonthlySteps] = useState(0);
 
@@ -37,7 +37,7 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess 
     };
 
     fetchStepStats();
-  }, []);
+  }, [stepData]); // Re-fetch when stepData changes
 
   return (
     <div className="profile-section">
