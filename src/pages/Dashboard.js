@@ -276,66 +276,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleRefreshFitbitData = async () => {
-    try {
-      setFitbitSyncing(true);
-      setError(null);
-      
-      const token = localStorage.getItem('fithub_token');
-      if (!token) {
-        setError('Please log in to sync Fitbit data');
-        return;
-      }
-      
-      // Add timeout to prevent stuck loading state
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
-      });
-      
-      // Just try to sync directly - if it fails, the backend will tell us why
-      const response = await Promise.race([
-        fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/sync`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }),
-        timeoutPromise
-      ]);
-      
-      if (response.ok) {
-        const result = await response.json();
-        setError(`Fitbit sync successful! Synced ${result.stepsSynced} days of step data.`);
-        setTimeout(() => setError(null), 5000);
-        
-        // Refresh the step data
-        const dataResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (dataResponse.ok) {
-          const dataResult = await dataResponse.json();
-          setStepData(dataResult.steps);
-        }
-      } else {
-        const error = await response.json();
-        if (response.status === 429) {
-          setError(`Rate limited: ${error.message}`);
-        } else {
-          setError(`Fitbit sync failed: ${error.message}`);
-        }
-        setTimeout(() => setError(null), 5000);
-      }
-    } catch (error) {
-      console.error('Failed to sync Fitbit data:', error);
-      setError('Failed to sync Fitbit data. Please try again.');
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setFitbitSyncing(false);
-    }
-  };
 
   const handleDisconnectFitbit = async () => {
     try {
@@ -416,12 +356,7 @@ const Dashboard = () => {
               <span>
                 Syncing Fitbit data... {syncProgress.completed}/{syncProgress.total} days
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-fithub-white opacity-80">
-                  Continues in background
-                </span>
-                <div className="w-4 h-4 border-2 border-fithub-white border-t-transparent rounded-full animate-spin"></div>
-              </div>
+              <div className="w-4 h-4 border-2 border-fithub-white border-t-transparent rounded-full animate-spin"></div>
             </div>
             <div className="w-full bg-fithub-bright-red rounded-full h-2 mt-2">
               <div 
@@ -460,18 +395,26 @@ const Dashboard = () => {
               {activeDays} active days in the last year
             </p>
             <div className="flex gap-2">
-              <button
-                onClick={handleRefreshFitbitData}
-                disabled={fitbitSyncing || (syncProgress && syncProgress.status === 'rate_limited')}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none flex items-center gap-2"
-              >
-                {fitbitSyncing && (
-                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                )}
-                {fitbitSyncing ? 'Syncing...' : 
-                 (syncProgress && syncProgress.status === 'rate_limited') ? 'Rate Limited' : 
-                 'Sync Fitbit'}
-              </button>
+              <div className="relative group">
+                <svg 
+                  className="w-5 h-5 text-fithub-text hover:text-fithub-white transition-colors"
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <div className="absolute bottom-full right-0 mb-1 px-4 py-2 bg-fithub-dark-grey border border-solid border-fithub-light-grey text-fithub-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 z-10">
+                  <p className="mb-2">
+                    This grid visualizes your activity each day, adding together steps you sync from FitBit with any steps you manually enter. 
+                  </p>
+                  <p className="mb-2">
+                    The dashboard will start by syncing your year-to-date step data, and then periodically update as needed.
+                  </p>
+                  <p>
+                    Use the buttons at the bottom of the screen to adjust step scoring to match your lifestyle.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           
