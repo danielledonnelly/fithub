@@ -317,10 +317,14 @@ const ProfilePage = () => {
   return (
     <div className="container">
       <div className="main-content">
-        <h1 className="contribution-title">Profile Settings</h1>
-        <p className="contribution-subtitle">
-          Manage your profile information and preferences
-        </p>
+        <div className="flex justify-between items-center mb-1">
+          <div>
+            <h1 className="page-title">Profile Settings</h1>
+            <p className="contribution-subtitle">
+              Manage your profile information and preferences
+            </p>
+          </div>
+        </div>
 
         {saveMessage && (
           <div className="px-3 py-3 bg-fithub-bright-red border border-fithub-bright-red rounded-md text-white mb-5 text-sm">
@@ -330,7 +334,7 @@ const ProfilePage = () => {
         
         <div className="contribution-section">
           <div className="flex justify-between items-center mb-5">
-            <h2 className="contribution-title m-0">Profile Information</h2>
+            <h2 className="section-title m-0">Profile Information</h2>
           </div>
 
           <div className="grid gap-5 max-w-4xl">

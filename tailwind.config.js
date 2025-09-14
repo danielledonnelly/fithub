@@ -62,7 +62,7 @@ module.exports = {
           'justify-content': 'space-between',
         },
         '.logo': {
-          'font-size': '24px',
+          'font-size': '28px',
           'font-weight': 'bold',
           'color': '#f0f6fc',
           'text-decoration': 'none',
@@ -212,6 +212,19 @@ module.exports = {
         },
         '.contribution-title': {
           'font-size': '18px',
+          'font-weight': '600',
+          'color': '#f0f6fc',
+          'margin': '0 0 12px 0',
+        },
+        '.page-title': {
+          'font-size': '24px',
+          'font-weight': '700',
+          'color': '#f0f6fc',
+          'margin': '0 0 8px 0',
+          'line-height': '1.2',
+        },
+        '.section-title': {
+          'font-size': '20px',
           'font-weight': '600',
           'color': '#f0f6fc',
           'margin': '0 0 12px 0',

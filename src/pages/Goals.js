@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import StepService from '../services/StepService';
 
 const Goals = () => {
@@ -8,6 +8,31 @@ const Goals = () => {
   const [weeklyGoal, setWeeklyGoal] = useState(70000);
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [goalType, setGoalType] = useState('daily'); // daily, weekly, custom
+  const [stepStats, setStepStats] = useState({
+    weeklySteps: 0,
+    monthlySteps: 0
+  });
+
+  const fetchStepStats = async () => {
+    try {
+      const token = localStorage.getItem('fithub_token');
+      if (token) {
+        // Fetch weekly and monthly stats from the backend
+        const statsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps/stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (statsResponse.ok) {
+          const stats = await statsResponse.json();
+          setStepStats(stats);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch step stats:', error);
+    }
+  };
 
   const fetchStepData = async () => {
     try {
@@ -34,12 +59,15 @@ const Goals = () => {
                 }
               });
               
-              if (response.ok) {
-                const result = await response.json();
-                setStepData(result.steps);
-                console.log('Using combined step data:', result.source);
-                return;
-              }
+                if (response.ok) {
+                  const result = await response.json();
+                  setStepData(result.steps);
+                  console.log('Using combined step data:', result.source);
+                  
+                  // Fetch weekly/monthly stats
+                  await fetchStepStats();
+                  return;
+                }
             }
           }
         } catch (fitbitError) {
@@ -50,6 +78,9 @@ const Goals = () => {
       // Fallback to local step data
       const data = await StepService.getAllSteps();
       setStepData(data);
+      
+      // Fetch weekly/monthly stats
+      await fetchStepStats();
     } catch (error) {
       console.error('Failed to fetch step data:', error);
     } finally {
@@ -93,6 +124,11 @@ const Goals = () => {
                     setStepData(result.steps);
                     console.log('Using combined step data:', result.source);
                   }
+                  
+                  // Fetch weekly/monthly stats
+                  if (mounted) {
+                    await fetchStepStats();
+                  }
                   return;
                 }
               }
@@ -106,6 +142,11 @@ const Goals = () => {
         const data = await StepService.getAllSteps();
         if (mounted) {
           setStepData(data);
+        }
+        
+        // Fetch weekly/monthly stats
+        if (mounted) {
+          await fetchStepStats();
         }
       } catch (error) {
         console.error('Failed to fetch step data:', error);
@@ -136,8 +177,8 @@ const Goals = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateString = date.toISOString().split('T')[0];
-      const steps = stepData[dateString] || 0;
+      const dateString = formatDateLocal(date);
+      const steps = normalizedStepData[dateString] || 0;
       const goalMet = steps >= dailyGoal;
       
       result.push({
@@ -152,9 +193,9 @@ const Goals = () => {
   };
 
   const getCurrentWeekProgress = () => {
-    const recentDays = getRecentDays(7);
-    const totalSteps = recentDays.reduce((sum, day) => sum + day.steps, 0);
-    const goalsMet = recentDays.filter(day => day.goalMet).length;
+    // Use the weekly steps from the backend stats
+    const totalSteps = stepStats.weeklySteps || 0;
+    const goalsMet = getRecentDays(7).filter(day => day.goalMet).length;
     const averageSteps = Math.round(totalSteps / 7);
     const weeklyProgress = Math.round((totalSteps / weeklyGoal) * 100);
     
@@ -166,11 +207,53 @@ const Goals = () => {
     };
   };
 
+  // Helper to format a Date object as YYYY-MM-DD in local time (same as ContributionGraph)
+  const formatDateLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Normalize stepData the same way ContributionGraph does
+  const normalizedStepData = useMemo(() => {
+    const result = {};
+    if (stepData && typeof stepData === 'object') {
+      Object.keys(stepData).forEach(key => {
+        try {
+          // Parse the date key and convert to YYYY-MM-DD format using local time
+          const date = new Date(key);
+          if (!isNaN(date.getTime())) {
+            const dateString = formatDateLocal(date);
+            result[dateString] = stepData[key];
+          }
+        } catch (e) {
+          // If key is already in YYYY-MM-DD format, use it as is
+          if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            result[key] = stepData[key];
+          }
+        }
+      });
+    }
+    return result;
+  }, [stepData]);
+
   const getTodayProgress = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const steps = stepData[today] || 0;
+    // Calculate today's steps from normalized stepData (same as contribution graph)
+    const today = formatDateLocal(new Date());
+    const steps = normalizedStepData[today] || 0;
     const progress = Math.round((steps / dailyGoal) * 100);
     const remaining = Math.max(0, dailyGoal - steps);
+    
+    // Debug logging
+    console.log('Daily Progress Debug:', {
+      today,
+      steps,
+      stepDataKeys: Object.keys(stepData).slice(0, 5), // Show first 5 keys
+      normalizedKeys: Object.keys(normalizedStepData).slice(0, 5), // Show first 5 normalized keys
+      dailyGoal,
+      progress
+    });
     
     return {
       steps,
@@ -194,35 +277,109 @@ const Goals = () => {
     return streak;
   };
 
+  const getDailyStreak = () => {
+    // Calculate how many consecutive days the user met their daily goal
+    const recentDays = getRecentDays(365); // Check last year for accuracy
+    let streak = 0;
+    
+    // Start from today and work backwards
+    for (let i = recentDays.length - 1; i >= 0; i--) {
+      if (recentDays[i].goalMet) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  const getWeeklyStreak = () => {
+    // Calculate how many consecutive weeks the user met their weekly goal
+    const recentDays = getRecentDays(365); // Check last year
+    let streak = 0;
+    
+    // Group days into weeks and check if each week met the goal
+    const weeks = [];
+    for (let i = 0; i < recentDays.length; i += 7) {
+      const weekDays = recentDays.slice(i, i + 7);
+      const weekTotal = weekDays.reduce((sum, day) => sum + day.steps, 0);
+      weeks.push({
+        weekTotal,
+        goalMet: weekTotal >= weeklyGoal
+      });
+    }
+    
+    // Count consecutive weeks from most recent
+    for (let i = weeks.length - 1; i >= 0; i--) {
+      if (weeks[i].goalMet) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  const getMonthlyStreak = () => {
+    // Calculate how many consecutive months the user met their monthly goal
+    const recentDays = getRecentDays(365); // Check last year
+    let streak = 0;
+    
+    // Group days into months and check if each month met the goal
+    const months = {};
+    recentDays.forEach(day => {
+      const monthKey = day.date.substring(0, 7); // YYYY-MM
+      if (!months[monthKey]) {
+        months[monthKey] = { totalSteps: 0, goalMet: false };
+      }
+      months[monthKey].totalSteps += day.steps;
+    });
+    
+    // Mark months that met the goal
+    Object.keys(months).forEach(monthKey => {
+      months[monthKey].goalMet = months[monthKey].totalSteps >= (weeklyGoal * 4);
+    });
+    
+    // Sort months by date and count consecutive from most recent
+    const sortedMonths = Object.keys(months).sort().reverse();
+    for (const monthKey of sortedMonths) {
+      if (months[monthKey].goalMet) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
   const recentDays = getRecentDays(7);
   const weekProgress = getCurrentWeekProgress();
   const todayProgress = getTodayProgress();
   const currentStreak = getGoalStreak();
+  const dailyStreak = getDailyStreak();
+  const weeklyStreak = getWeeklyStreak();
+  const monthlyStreak = getMonthlyStreak();
 
 
   return (
     <div className="container">
       <div className="main-content">
-        <div className="flex justify-between items-center mb-5">
+        <div className="flex justify-between items-center mb-1">
           <div>
-            <h1 className="contribution-title">Goals</h1>
+            <h1 className="page-title">Goals</h1>
             <p className="contribution-subtitle">
               Set and track your fitness goals using your step data
             </p>
           </div>
-          <button
-            onClick={fetchStepData}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
-          >
-            {loading ? 'Loading...' : 'Refresh Data'}
-          </button>
         </div>
 
-        {/* Goal Settings */}
+        {/* Progress */}
         <div className="contribution-section mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="contribution-title m-0">Goal Settings</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="section-title m-0">Progress</h2>
             {!isEditingGoals ? (
               <button
                 onClick={() => setIsEditingGoals(true)}
@@ -248,147 +405,105 @@ const Goals = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Daily Goal Sub-section */}
-            <div className="px-4 py-3 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base text-fithub-white m-0">Daily Goal</h3>
-                {isEditingGoals ? (
-                  <input
-                    type="number"
-                    value={dailyGoal}
-                    onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)}
-                    className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
-                  />
-                ) : (
-                  <div className="text-lg font-semibold text-fithub-white">
-                    {dailyGoal.toLocaleString()}
+          <div className="space-y-4">
+            {/* Daily Goal */}
+            <div className="px-4 py-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-base text-fithub-white m-0">Daily Goal</h4>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-fithub-text">
+                    {dailyStreak} day streak
                   </div>
-                )}
+                  {isEditingGoals ? (
+                    <input
+                      type="number"
+                      value={dailyGoal}
+                      onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)}
+                      className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
+                    />
+                  ) : (
+                    <div className="text-lg font-semibold text-fithub-white">
+                      {dailyGoal.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Daily Progress Bar */}
+              <div className="w-full h-3 bg-fithub-dark-grey rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-fithub-bright-red transition-all duration-300 ease-in-out"
+                  style={{ width: `${Math.min(todayProgress.progress, 100)}%` }}
+                />
+              </div>
+              <div className="text-xs text-fithub-text mt-2">
+                {Number(todayProgress.steps).toLocaleString()} / {Number(dailyGoal).toLocaleString()} steps ({todayProgress.progress}%)
               </div>
             </div>
 
-            {/* Weekly Goal Sub-section */}
-            <div className="px-4 py-3 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base text-fithub-white m-0">Weekly Goal</h3>
-                {isEditingGoals ? (
-                  <input
-                    type="number"
-                    value={weeklyGoal}
-                    onChange={(e) => setWeeklyGoal(parseInt(e.target.value) || 0)}
-                    className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
-                  />
-                ) : (
-                  <div className="text-lg font-semibold text-fithub-white">
-                    {weeklyGoal.toLocaleString()}
+            {/* Weekly Goal */}
+            <div className="px-4 py-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-base text-fithub-white m-0">Weekly Goal</h4>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-fithub-text">
+                    {weeklyStreak} week streak
                   </div>
-                )}
+                  {isEditingGoals ? (
+                    <input
+                      type="number"
+                      value={weeklyGoal}
+                      onChange={(e) => setWeeklyGoal(parseInt(e.target.value) || 0)}
+                      className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
+                    />
+                  ) : (
+                    <div className="text-lg font-semibold text-fithub-white">
+                      {weeklyGoal.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Weekly Progress Bar */}
+              <div className="w-full h-3 bg-fithub-dark-grey rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-fithub-bright-red transition-all duration-300 ease-in-out"
+                  style={{ width: `${Math.min(weekProgress.weeklyProgress, 100)}%` }}
+                />
+              </div>
+              <div className="text-xs text-fithub-text mt-2">
+                {Number(weekProgress.totalSteps || 0).toLocaleString()} / {Number(weeklyGoal).toLocaleString()} steps ({weekProgress.weeklyProgress}%)
               </div>
             </div>
+
+              {/* Monthly Goal */}
+              <div className="px-4 py-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-base text-fithub-white m-0">Monthly Goal</h4>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-fithub-text">
+                      {monthlyStreak} month streak
+                    </div>
+                    <div className="text-lg font-semibold text-fithub-white">
+                      {(weeklyGoal * 4).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Monthly Progress Bar */}
+                <div className="w-full h-3 bg-fithub-dark-grey rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-fithub-bright-red transition-all duration-300 ease-in-out"
+                    style={{ width: `${Math.min((stepStats.monthlySteps || 0) / (weeklyGoal * 4) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-fithub-text mt-2">
+                  {Number(stepStats.monthlySteps || 0).toLocaleString()} / {Number(weeklyGoal * 4).toLocaleString()} steps ({Math.round((stepStats.monthlySteps || 0) / (weeklyGoal * 4) * 100)}%)
+                </div>
+              </div>
           </div>
         </div>
 
-        {/* Goal Achievement Stats */}
-        <div className="contribution-section mb-5">
-          <h2 className="contribution-title mb-4">Goal Achievement</h2>
-          
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
-            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-white mb-1">
-                {currentStreak}
-              </div>
-              <div className="text-xs text-fithub-text">Day Streak</div>
-            </div>
-            
-            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-white mb-1">
-                {weekProgress.goalsMet}/7
-              </div>
-              <div className="text-xs text-fithub-text">Weekly Goals Met</div>
-            </div>
-            
-            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-white mb-1">
-                {Math.round((weekProgress.goalsMet / 7) * 100)}%
-              </div>
-              <div className="text-xs text-fithub-text">Weekly Success Rate</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Today's Progress */}
-        <div className="contribution-section mb-5">
-          <h2 className="contribution-title mb-4">Today's Progress</h2>
-          
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4 mb-4">
-            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-white mb-1">
-                {todayProgress.steps.toLocaleString()}
-              </div>
-              <div className="text-xs text-fithub-text">Steps Today</div>
-            </div>
-            
-            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-white mb-1">
-                {todayProgress.progress}%
-              </div>
-              <div className="text-xs text-fithub-text">Goal Progress</div>
-            </div>
-            
-            <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-white mb-1">
-                {todayProgress.remaining.toLocaleString()}
-              </div>
-              <div className="text-xs text-fithub-text">Steps Remaining</div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full h-2 bg-[#21262d] rounded overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-300 ease-in-out ${
-                todayProgress.progress >= 100 ? 'bg-fithub-bright-red' : 'bg-fithub-bright-red'
-              }`}
-              style={{ width: `${todayProgress.progress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Weekly Progress */}
-        <div className="contribution-section mb-5">
-          <h2 className="contribution-title mb-4">This Week's Progress</h2>
-          
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mb-4">
-            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-fithub-white">
-                {weekProgress.totalSteps.toLocaleString()}
-              </div>
-              <div className="text-xs text-fithub-text">Total Steps</div>
-            </div>
-            
-            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-fithub-white">
-                {weekProgress.averageSteps.toLocaleString()}
-              </div>
-              <div className="text-xs text-fithub-text">Daily Average</div>
-            </div>
-            
-            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-fithub-white">
-                {weekProgress.goalsMet}/7
-              </div>
-              <div className="text-xs text-fithub-text">Goals Met</div>
-            </div>
-            
-            <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-fithub-white">
-                {weekProgress.weeklyProgress}%
-              </div>
-              <div className="text-xs text-fithub-text">Weekly Goal</div>
-            </div>
-          </div>
-        </div>
 
         {/* Daily Progress Chart */}
         <div className="contribution-section">

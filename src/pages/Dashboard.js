@@ -386,7 +386,7 @@ const Dashboard = () => {
         )}
 
         {syncProgress && syncProgress.status === 'rate_limited' && (
-          <div className="px-3 py-2 bg-fithub-dark-red border border-fithub-red rounded text-fithub-white mb-5 text-sm">
+          <div className="px-3 py-2 bg-fithub-dark-red border border-fithub-red rounded text-fithub-white mb-3 text-sm">
             <div className="flex items-center justify-between">
               <span>
                 Rate limited by Fitbit API. Sync will resume in {Math.ceil((syncProgress.cooldownUntil - Date.now()) / (60 * 1000))} minutes.

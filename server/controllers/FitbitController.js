@@ -51,30 +51,6 @@ class FitbitController {
     }
   }
 
-  static async userNeedsSync(userId) {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const jan1 = new Date(today.getFullYear(), 0, 1);
-    
-    const [rows] = await pool.query(
-      'SELECT date FROM steps WHERE user_id = ?', [userId]
-    );
-    const existingDates = new Set(rows.map(r => r.date.toISOString().split('T')[0]));
-    
-    // Check if we're missing any days from Jan 1st to yesterday (not including today)
-    for (let d = new Date(yesterday); d >= jan1; d.setDate(d.getDate() - 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      if (!existingDates.has(dateStr)) {
-        return true;
-      }
-    }
-    
-    // ALWAYS sync the past 3 days regardless of current data
-    // This ensures we get the latest Fitbit data for recent days
-    console.log(`Sync needed: updating past 3 days with latest Fitbit data`);
-    return true;
-  }
 
   static async startSync(userId) {
     if (activeSyncs.has(userId)) {
@@ -216,9 +192,6 @@ class FitbitController {
             console.log(`Sync progress: ${synced}/${daysToSync.length} days`);
           }
           
-          // Rate limit protection: 1 request every 1.5 seconds (2400 requests/hour)
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
         } catch (error) {
           console.error(`Error syncing ${day.toISOString().split('T')[0]}:`, error.message);
           
@@ -248,16 +221,11 @@ class FitbitController {
               rateLimitCooldowns.delete(userId);
               console.log(`Rate limit cooldown expired for user ${userId}`);
               
-              // Check if Fitbit is still connected and if sync is still needed
+              // Check if Fitbit is still connected and resume sync
               const currentUser = await UserModel.findById(userId);
               if (currentUser?.fitbit_connected && currentUser?.fitbit_access_token) {
-                const stillNeedsSync = await FitbitController.userNeedsSync(userId);
-                if (stillNeedsSync) {
-                  console.log(`Resuming sync after rate limit cooldown...`);
-                  FitbitController.startSync(userId);
-                } else {
-                  console.log(`No sync needed after cooldown for user ${userId}`);
-                }
+                console.log(`Resuming sync after rate limit cooldown...`);
+                FitbitController.startSync(userId);
               } else {
                 console.log(`Fitbit disconnected during cooldown, not resuming sync`);
               }
@@ -317,7 +285,6 @@ class FitbitController {
                 console.log(`${synced}/${daysToSync.length} days synced`);
               }
               
-              await new Promise(resolve => setTimeout(resolve, 3000));
               
             } catch (refreshError) {
               console.error(`Failed to refresh token for user ${userId}:`, refreshError.message);
@@ -422,30 +389,25 @@ class FitbitController {
               reason: cooldown.reason
             });
           } else {
-            // Check if sync is needed and start immediately
-            const needsSync = await FitbitController.userNeedsSync(userId);
-            if (needsSync) {
-              console.log('Auto-sync triggered from dashboard - starting sync immediately');
+            // Always start sync for recent days (no need to check)
+            console.log('Auto-sync triggered from dashboard - starting sync immediately');
+            
+            // Double-check that no sync started in the meantime
+            if (!activeSyncs.has(userId)) {
+              // Set initial sync progress to show UI immediately
+              syncProgress.set(userId, {
+                total: 0,
+                completed: 0,
+                current: null,
+                status: 'syncing'
+              });
               
-              // Double-check that no sync started in the meantime
-              if (!activeSyncs.has(userId)) {
-                // Set initial sync progress to show UI immediately
-                syncProgress.set(userId, {
-                  total: 0,
-                  completed: 0,
-                  current: null,
-                  status: 'syncing'
-                });
-                
-                // Start sync in background
-                setImmediate(async () => {
-                  await FitbitController.startSync(userId);
-                });
-              } else {
-                console.log('Sync started by another request, skipping');
-              }
+              // Start sync in background
+              setImmediate(async () => {
+                await FitbitController.startSync(userId);
+              });
             } else {
-              console.log('Auto-sync check: No sync needed');
+              console.log('Sync started by another request, skipping');
             }
           }
         }
@@ -623,8 +585,6 @@ class FitbitController {
           await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
           syncedCount++;
           
-          // Conservative delay to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
           if (error.message.includes('429')) {
             console.log(`Rate limit hit during specific days sync for user ${userId}`);
@@ -658,7 +618,6 @@ class FitbitController {
               await StepModel.updateFitbitSteps(userId, dateStr, stepData.steps || 0);
               syncedCount++;
               
-              await new Promise(resolve => setTimeout(resolve, 2000));
               
             } catch (refreshError) {
               console.error(`Failed to refresh token for user ${userId} during cron:`, refreshError.message);
