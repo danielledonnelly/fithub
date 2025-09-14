@@ -183,7 +183,7 @@ const Dashboard = () => {
             console.log('Sync completed - stopping live updates');
             clearInterval(pollInterval);
           }
-        }, 5000);
+        }, 3000);
       }
     };
 
@@ -245,7 +245,7 @@ const Dashboard = () => {
         } catch (error) {
           console.error('Error polling sync progress:', error);
         }
-      }, 3000); // Poll every 3 seconds for live updates
+      }, 2000); // Poll every 2 seconds for live updates
     }
     
     return () => {

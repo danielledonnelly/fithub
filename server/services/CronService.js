@@ -45,14 +45,14 @@ class CronService {
     const today = new Date();
     const daysToSync = [];
     
-    // Get today, yesterday, and day before yesterday
+    // Get today, yesterday, and day before yesterday (starting with today)
     for (let i = 0; i < 3; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       daysToSync.push(date);
     }
     
-    console.log(`Cron: Syncing last 3 days for user ${userId}`);
+    console.log(`Cron: Syncing last 3 days for user ${userId} (starting with today)`);
     
     // Use the specific days sync method to update these days
     await FitbitController.syncSpecificDays(userId, daysToSync);

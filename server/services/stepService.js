@@ -322,18 +322,11 @@ class StepService {
       const weekAgoStr = oneWeekAgo.toISOString().split('T')[0];
       const monthAgoStr = oneMonthAgo.toISOString().split('T')[0];
       
-      console.log(`Calculating stats for user ${userId}:`);
-      console.log(`Today: ${todayStr}`);
-      console.log(`Week ago: ${weekAgoStr}`);
-      console.log(`Month ago: ${monthAgoStr}`);
-      
       // Get weekly steps (last 7 days)
       const weeklySteps = await StepModel.getStepsSumInRange(userId, weekAgoStr, todayStr);
-      console.log(`Weekly steps: ${weeklySteps}`);
       
       // Get monthly steps (last 30 days)
       const monthlySteps = await StepModel.getStepsSumInRange(userId, monthAgoStr, todayStr);
-      console.log(`Monthly steps: ${monthlySteps}`);
       
       return {
         weeklySteps,

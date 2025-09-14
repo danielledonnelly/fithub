@@ -85,8 +85,6 @@ class StepModel {
   // @param {number} steps - Number of steps from Fitbit API
   // @returns {Object} Confirmation object with date and steps
   static async updateFitbitSteps(userId, date, steps) {
-    console.log('Updating Fitbit steps:', { userId, date, steps });
-    
     // UPSERT: Always update with latest Fitbit data
     // Fitbit API is the source of truth for step data
     const [result] = await pool.query(
@@ -95,14 +93,6 @@ class StepModel {
        ON DUPLICATE KEY UPDATE fitbit_steps = ?`,
       [userId, date, steps, steps]
     );
-    
-    // Logging results
-    if (result.affectedRows === 0) {
-      console.log(`⚠️  No rows affected for ${date}`);
-
-    } else {
-      console.log(`✅ Updated ${date} with ${steps} steps from Fitbit`);
-    }
     
     return { date, steps };
   }
