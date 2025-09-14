@@ -87,7 +87,7 @@ const Community = () => {
                 setSearchQuery(e.target.value);
                 handleSearch(e.target.value);
               }}
-              className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+              className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-salmon transition-colors"
             />
             {searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-fithub-medium-grey border border-fithub-light-grey rounded z-10 max-h-60 overflow-y-auto">

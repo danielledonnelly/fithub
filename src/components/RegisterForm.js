@@ -185,18 +185,18 @@ const RegisterForm = ({ onToggleForm, onSuccess }) => {
               <div 
                 className={`password-strength-bar h-1 rounded transition-all duration-300 ${
                   passwordStrength.strength === 1 ? 'bg-fithub-bright-red' :
-                  passwordStrength.strength === 2 ? 'bg-fithub-orange' :
+                  passwordStrength.strength === 2 ? 'bg-fithub-salmon' :
                   passwordStrength.strength === 3 ? 'bg-fithub-yellow' :
-                  passwordStrength.strength === 4 ? 'bg-fithub-orange' : 'bg-fithub-light-grey'
+                  passwordStrength.strength === 4 ? 'bg-fithub-salmon' : 'bg-fithub-light-grey'
                 }`}
                 style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
               />
               <span 
                 className={`password-strength-text text-sm font-medium ${
                   passwordStrength.strength === 1 ? 'text-fithub-bright-red' :
-                  passwordStrength.strength === 2 ? 'text-fithub-orange' :
+                  passwordStrength.strength === 2 ? 'text-fithub-salmon' :
                   passwordStrength.strength === 3 ? 'text-fithub-yellow' :
-                  passwordStrength.strength === 4 ? 'text-fithub-orange' : 'text-fithub-text'
+                  passwordStrength.strength === 4 ? 'text-fithub-salmon' : 'text-fithub-text'
                 }`}
               >
                 {passwordStrength.text}

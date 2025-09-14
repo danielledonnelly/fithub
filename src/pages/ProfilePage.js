@@ -432,7 +432,7 @@ const ProfilePage = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+                    className="w-full px-4 py-3 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-salmon transition-colors"
                   />
                 </div>
                 
@@ -445,7 +445,7 @@ const ProfilePage = () => {
                     value={formData.bio}
                     onChange={handleInputChange}
                     rows="2"
-                    className="w-full px-4 py-3 text-sm font-sans bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none resize-y focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+                    className="w-full px-4 py-3 text-sm font-sans bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none resize-y focus:outline-none focus:ring-0 focus:border-fithub-salmon transition-colors"
                   />
                 </div>
               </div>

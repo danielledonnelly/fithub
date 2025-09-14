@@ -369,7 +369,7 @@ const Dashboard = () => {
         )}
 
         {syncProgress && syncProgress.status === 'syncing' && (
-          <div className="px-3 py-2 bg-fithub-orange border border-fithub-peach rounded text-fithub-white mb-5 text-sm">
+          <div className="px-3 py-2 bg-fithub-salmon border border-fithub-salmon rounded text-fithub-white mb-5 text-sm">
             <div className="flex items-center justify-between">
               <span>
                 Syncing Fitbit data... {syncProgress.completed}/{syncProgress.total} days
