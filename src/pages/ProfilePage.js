@@ -346,7 +346,7 @@ const ProfilePage = () => {
                 </label>
                 <div className="flex flex-col items-center gap-3">
                   <div 
-                    className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 flex items-center justify-center text-2xl sm:text-3xl md:text-4xl lg:text-4xl text-fithub-text bg-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-dark-grey transition-colors group"
+                    className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-2xl text-fithub-text bg-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-dark-grey transition-colors group"
                     style={{ border: '2px solid #30363d' }}
                     onClick={() => document.getElementById('avatar-upload').click()}
                   >
