@@ -33,6 +33,12 @@ const Header = () => {
                   Dashboard
                 </Link>
                 <Link 
+                  to="/goals" 
+                  className={`nav-link text-sm lg:text-base ${location.pathname === '/goals' ? 'active' : ''}`}
+                >
+                  Goals
+                </Link>
+                <Link 
                   to="/community" 
                   className={`nav-link text-sm lg:text-base ${location.pathname === '/community' ? 'active' : ''}`}
                 >

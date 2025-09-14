@@ -40,6 +40,26 @@ const Dashboard = () => {
     loadProfile();
   }, []);
 
+  // Refresh profile when component becomes visible (user navigates back from ProfilePage)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const loadProfile = async () => {
+          try {
+            const profileData = await ProfileService.getProfile();
+            setProfile(profileData);
+          } catch (error) {
+            console.error('Error refreshing profile:', error);
+          }
+        };
+        loadProfile();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // Load data from backend API
   useEffect(() => {
     let mounted = true;
@@ -190,20 +210,18 @@ const Dashboard = () => {
           if (progressData.isActive) {
             setSyncProgress(progressData.progress);
             
-            // Refresh step data every 5 syncs to show progress
-            if (progressData.progress && progressData.progress.completed % 5 === 0) {
-              const token = localStorage.getItem('fithub_token');
-              if (token) {
-                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                });
-                
-                if (response.ok) {
-                  const result = await response.json();
-                  setStepData(result.steps);
+            // Refresh step data every poll to show live updates
+            const token = localStorage.getItem('fithub_token');
+            if (token) {
+              const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/fitbit/steps-for-graph`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
                 }
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                setStepData(result.steps);
               }
             }
           } else {
@@ -227,7 +245,7 @@ const Dashboard = () => {
         } catch (error) {
           console.error('Error polling sync progress:', error);
         }
-      }, 2000); // Poll every 2 seconds
+      }, 3000); // Poll every 3 seconds for live updates
     }
     
     return () => {

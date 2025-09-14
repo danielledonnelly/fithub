@@ -10,14 +10,15 @@ module.exports = {
         fithub: {
           'white': '#f0f0f0',
           'text': '#c9d1d9',
+          'grey': '#8b949e',
           'light-grey': '#30363d',
           'medium-grey': '#161b22',
           'dark-grey': '#0d1117',
-          'salmon': '#ff2d2d',
           'red': '#a02024',
           'dark-red': '#662020',
           'brown': '#34181c',
           'bright-red': '#bb1f21',
+          'salmon': '#ff2d2d',
           'orange': '#ff462d',
           'peach': '#ff722d',
           'yellow': '#ff982d',
@@ -108,7 +109,7 @@ module.exports = {
           'transition': 'all 0.2s',
           '&:hover': {
             'background-color': '#30363d',
-            'border-color': '#8b949e',
+            'border-color': '#8b949e'
           },
         },
         '.main-content': {

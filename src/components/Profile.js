@@ -41,7 +41,23 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess,
 
   return (
     <div className="profile-section">
-      <div className="profile-avatar">{safeProfile.avatar}</div>
+      <div className="profile-avatar">
+        {safeProfile.avatar ? (
+          <img 
+            src={safeProfile.avatar.startsWith('data:') ? safeProfile.avatar : `${process.env.REACT_APP_BASE_URL || 'http://localhost:5001'}${safeProfile.avatar}`} 
+            alt="Profile Avatar" 
+            className="w-full h-full object-cover rounded-full"
+            onError={(e) => {
+              console.error('Profile avatar failed to load:', e);
+              e.target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-2xl text-fithub-text bg-fithub-light-grey rounded-full">
+            ?
+          </div>
+        )}
+      </div>
       <div className="profile-content">
         <div className="profile-header">
           <h1 className="profile-name">{safeProfile.name}</h1>

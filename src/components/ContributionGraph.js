@@ -13,10 +13,6 @@ const ACTIVITY_MODES = {
     name: 'Athletic',
     thresholds: [7500, 12500, 20000]
   },
-  goals: {
-    name: 'Goals',
-    thresholds: null // Will be calculated dynamically
-  }
 };
 
 // Helper to format a Date object as YYYY-MM-DD in local time
@@ -103,29 +99,13 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
         let thresholds = ACTIVITY_MODES[activityMode].thresholds;
         let level = null;
         
-        // Handle goal-based mode
-        if (activityMode === 'goals') {
-          const dailyGoal = getDailyGoal();
-          if (steps === 0) {
-            level = null;
-          } else if (steps < dailyGoal * 0.75) {
-            level = 0;
-          } else if (steps < dailyGoal) {
-            level = 1;
-          } else if (steps < dailyGoal * 1.25) {
-            level = 2;
-          } else {
-            level = 3;
-          }
-        } else {
-          // Standard threshold-based mode
-          if (steps > 0) {
-            level = 0;
-            for (let i = thresholds.length - 1; i >= 0; i--) {
-              if (steps >= thresholds[i]) {
-                level = i + 1;
-                break;
-              }
+        // Standard threshold-based mode
+        if (steps > 0) {
+          level = 0;
+          for (let i = thresholds.length - 1; i >= 0; i--) {
+            if (steps >= thresholds[i]) {
+              level = i + 1;
+              break;
             }
           }
         }
@@ -218,45 +198,24 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
         <div className="contribution-legend">
           <span>Less</span>
           <div className="legend-items">
-            {activityMode === 'goals' ? (
-              <>
-                <div className="legend-item">
-                  <div className="contribution-day level-0" />
-                  <span>{`< ${Math.round(dailyGoal * 0.75).toLocaleString()}`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-1" />
-                  <span>{`${dailyGoal.toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-2" />
-                  <span>{`${Math.round(dailyGoal * 1.25).toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-3" />
-                  <span>{`${Math.round(dailyGoal * 1.5).toLocaleString()}+`}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="legend-item">
-                  <div className="contribution-day level-0" />
-                  <span>{`< ${currentThresholds[0].toLocaleString()}`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-1" />
-                  <span>{`${currentThresholds[0].toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-2" />
-                  <span>{`${currentThresholds[1].toLocaleString()}+`}</span>
-                </div>
-                <div className="legend-item">
-                  <div className="contribution-day level-3" />
-                  <span>{`${currentThresholds[2].toLocaleString()}+`}</span>
-                </div>
-              </>
-            )}
+            <>
+              <div className="legend-item">
+                <div className="contribution-day level-0" />
+                <span>{`< ${currentThresholds[0].toLocaleString()}`}</span>
+              </div>
+              <div className="legend-item">
+                <div className="contribution-day level-1" />
+                <span>{`${currentThresholds[0].toLocaleString()}+`}</span>
+              </div>
+              <div className="legend-item">
+                <div className="contribution-day level-2" />
+                <span>{`${currentThresholds[1].toLocaleString()}+`}</span>
+              </div>
+              <div className="legend-item">
+                <div className="contribution-day level-3" />
+                <span>{`${currentThresholds[2].toLocaleString()}+`}</span>
+              </div>
+            </>
           </div>
           <span>More</span>
         </div>

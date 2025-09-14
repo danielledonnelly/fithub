@@ -120,25 +120,38 @@ const ProfilePage = () => {
             setSaving(true);
             const updatedProfile = await ProfileService.updateProfile(data);
             setProfile(updatedProfile);
+            // Only show success message for avatar uploads, not regular text changes
+            if (data.avatar && data.avatar !== profile.avatar) {
+              setSaveMessage('Avatar updated successfully!');
+              setTimeout(() => setSaveMessage(''), 3000);
+            }
           } catch (error) {
             console.error('Error auto-saving profile:', error);
-            setSaveMessage('Failed to auto-save. Please try again.');
-            setTimeout(() => setSaveMessage(''), 3000);
+            if (error.message.includes('PayloadTooLargeError') || error.message.includes('request entity too large')) {
+              setSaveMessage('Image too large. Please select a smaller image.');
+            } else {
+              setSaveMessage('Failed to auto-save. Please try again.');
+            }
+            setTimeout(() => setSaveMessage(''), 5000);
           } finally {
             setSaving(false);
           }
         }, 1000); // Wait 1 second after user stops typing
       };
-    }, []),
-    []
+    }, [profile.avatar]),
+    [profile.avatar]
   );
 
-  // Auto-save when formData changes
+  // Auto-save when formData changes (excluding avatar which is handled separately)
   React.useEffect(() => {
-    if (!loading && (formData.name !== profile.name || formData.bio !== profile.bio || formData.avatar !== profile.avatar)) {
-      autoSave(formData);
+    if (!loading && (formData.name !== profile.name || formData.bio !== profile.bio)) {
+      // Only save name and bio, not avatar
+      autoSave({
+        name: formData.name,
+        bio: formData.bio
+      });
     }
-  }, [formData, profile, loading, autoSave]);
+  }, [formData.name, formData.bio, profile.name, profile.bio, loading, autoSave]);
 
 
 
@@ -279,7 +292,7 @@ const ProfilePage = () => {
   // Handle delete all steps
   const handleDeleteAllSteps = async () => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete ALL your step data? This action cannot be undone and will remove all your step history.'
+      'Are you sure you want to delete ALL your step data?'
     );
     
     if (!confirmed) return;
@@ -328,23 +341,25 @@ const ProfilePage = () => {
                 </label>
                 <div className="flex flex-col items-center gap-2">
                   <div 
-                    className="w-16 h-16 flex items-center justify-center text-2xl text-fithub-text bg-fithub-light-grey border border-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-medium-grey transition-colors"
+                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 flex items-center justify-center text-2xl sm:text-3xl md:text-4xl lg:text-4xl text-fithub-text bg-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-dark-grey transition-colors group"
+                    style={{ border: '2px solid #30363d' }}
                     onClick={() => document.getElementById('avatar-upload').click()}
                   >
-                    {formData.avatar && formData.avatar.startsWith('data:') ? (
+                    {formData.avatar ? (
                       <img 
-                        src={formData.avatar} 
+                        src={formData.avatar.startsWith('data:') ? formData.avatar : `${process.env.REACT_APP_BASE_URL || 'http://localhost:5001'}${formData.avatar}`} 
                         alt="Avatar" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
+                          console.error('Avatar image failed to load:', e);
                           e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
                         }}
                       />
-                    ) : null}
-                    <div className="w-full h-full flex items-center justify-center text-2xl text-fithub-text bg-fithub-light-grey">
-                      {formData.avatar && !formData.avatar.startsWith('data:') ? formData.avatar : '?'}
-                    </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl md:text-4xl lg:text-4xl text-fithub-text">
+                        ?
+                      </div>
+                    )}
                   </div>
                   <input
                     id="avatar-upload"
@@ -352,17 +367,49 @@ const ProfilePage = () => {
                     name="avatar"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
+                        // Check file size (limit to 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                          setSaveMessage('Image too large. Please select an image smaller than 5MB.');
+                          setTimeout(() => setSaveMessage(''), 5000);
+                          return;
+                        }
+                        
+                        // Check file type
+                        if (!file.type.startsWith('image/')) {
+                          setSaveMessage('Please select a valid image file.');
+                          setTimeout(() => setSaveMessage(''), 5000);
+                          return;
+                        }
+                        
+                        try {
+                          setSaving(true);
+                          // Upload file to server
+                          const result = await ProfileService.uploadAvatar(file);
+                          
+                          // Update form data with the file path
                           setFormData(prev => ({
                             ...prev,
-                            avatar: event.target.result
+                            avatar: result.avatarPath
                           }));
-                        };
-                        reader.readAsDataURL(file);
+                          
+                          // Update the profile state to reflect the new avatar
+                          setProfile(prev => ({
+                            ...prev,
+                            avatar: result.avatarPath
+                          }));
+                          
+                          setSaveMessage('Avatar uploaded successfully!');
+                          setTimeout(() => setSaveMessage(''), 3000);
+                        } catch (error) {
+                          console.error('Avatar upload error:', error);
+                          setSaveMessage('Failed to upload avatar. Please try again.');
+                          setTimeout(() => setSaveMessage(''), 5000);
+                        } finally {
+                          setSaving(false);
+                        }
                       }
                     }}
                   />
@@ -402,79 +449,74 @@ const ProfilePage = () => {
         </div>
 
       
-        {/* Fitness App Integrations Section */}
-        <div className="contribution-section mt-5">
-          <h2 className="contribution-title">Fitness App Integrations</h2>
-          <p className="contribution-subtitle">
-            Connect your fitness apps to automatically sync your step data
-          </p>
-          
-          <div className="flex flex-col gap-5 mt-4">
-
-
-            {/* Fitbit Integration */}
-            <div className="p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="m-0 text-base text-fithub-white">Fitbit</h3>
-                <div className={`px-3 py-2 text-xs font-medium text-fithub-white rounded-md ${
-                  fitbitStatus.connected ? 'bg-fithub-orange' : 'bg-fithub-dark-red'
-                }`}>
-                  {fitbitStatus.connected ? 'Connected' : 'Not Connected'}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {!fitbitStatus.connected ? (
-                  <button
-                    onClick={handleConnectFitbit}
-                    disabled={fitbitLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
-                  >
-                    {fitbitLoading ? 'Loading...' : 'Connect Fitbit'}
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm text-fithub-text">
-                      Connected since: {fitbitStatus.connectedAt ? new Date(fitbitStatus.connectedAt).toLocaleDateString() : 'Unknown'}
-                    </div>
-
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
+          {/* Fitness App Integrations Section */}
+          <div className="contribution-section">
+            <h2 className="contribution-title">Fitness App Integrations</h2>
+            <p className="contribution-subtitle">
+              Connect your fitness apps to automatically sync your step data
+            </p>
+            
+            <div className="flex flex-col gap-5 mt-4">
+              {/* Fitbit Integration */}
+              <div className="p-2 sm:p-3 lg:p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="m-0 text-base text-fithub-white">
+                      Fitbit {fitbitStatus.connected && <span className="text-fithub-bright-red">• Connected</span>}
+                    </h3>
+                  </div>
+                  {fitbitStatus.connected && (
                     <button
                       onClick={handleDisconnectFitbit}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-fithub-bright-red rounded cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
+                      className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red border-0 outline-none"
                     >
                       Disconnect
+                    </button>
+                  )}
+                </div>
+                
+                {!fitbitStatus.connected && (
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={handleConnectFitbit}
+                      disabled={fitbitLoading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
+                    >
+                      {fitbitLoading ? 'Loading...' : 'Connect Fitbit'}
                     </button>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Data Management Section */}
-        <div className="contribution-section mt-5">
-          <h2 className="contribution-title">Data Management</h2>
-          <p className="contribution-subtitle">
-            Manage your step data and account information
-          </p>
-          
-          <div className="flex flex-col gap-5 mt-4">
-            {/* Delete All Steps */}
-            <div className="p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
-              <div className="flex justify-between items-center mb-3">
-                <div>
-                  <h3 className="m-0 text-base text-fithub-white">Delete All Step Data</h3>
-                  <p className="text-sm text-fithub-text mt-1">
-                    Permanently remove all your step history. This action cannot be undone.
-                  </p>
+          {/* Data Management Section */}
+          <div className="contribution-section">
+            <h2 className="contribution-title">Data Management</h2>
+            <p className="contribution-subtitle">
+              Manage your step data and account information
+            </p>
+            
+            <div className="flex flex-col gap-2 mt-2">
+              {/* Delete All Steps */}
+              <div className="p-2 sm:p-3 lg:p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="m-0 text-base text-fithub-white">Delete All Step Data</h3>
+                      <p className="text-sm text-fithub-text mt-0 mb-0">
+                        Permanently remove all your step history.
+                      </p>
+                  </div>
+                  <button
+                    onClick={handleDeleteAllSteps}
+                    disabled={deleteAllLoading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
+                  >
+                    {deleteAllLoading ? 'Deleting...' : 'Delete Data'}
+                  </button>
                 </div>
-                <button
-                  onClick={handleDeleteAllSteps}
-                  disabled={deleteAllLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-fithub-bright-red rounded-md cursor-pointer hover:bg-fithub-dark-red disabled:opacity-60 disabled:cursor-not-allowed border-0 outline-none"
-                >
-                  {deleteAllLoading ? 'Deleting...' : 'Delete All Data'}
-                </button>
               </div>
             </div>
           </div>

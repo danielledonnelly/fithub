@@ -2,7 +2,7 @@ import React from 'react';
 
 const BaseStyles = () => {
   return (
-    <style jsx global>{`
+    <style>{`
       * {
         box-sizing: border-box;
       }
@@ -21,6 +21,25 @@ const BaseStyles = () => {
       code {
         font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
           monospace;
+      }
+      
+      .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      
+      .profile-section {
+        display: flex;
+        align-items: center;
+        gap: 48px;
+      }
+      
+      .profile-content {
+        flex: 1;
+        min-width: 0;
       }
     `}</style>
   );

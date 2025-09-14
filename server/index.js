@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const path = require('path');
 
 // Debug: Check if JWT secret is loaded
 console.log('JWT Secret loaded:', process.env.JWT_SECRET ? 'Yes' : 'No');
@@ -11,14 +12,19 @@ console.log('JWT Secret length:', process.env.JWT_SECRET ? process.env.JWT_SECRE
 const stepRoutes = require('./routes/stepRoutes');
 const authRoutes = require('./routes/authRoutes');
 const fitbitRoutes = require('./routes/fitbitRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increase limit for base64 images
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // For form data
 app.use(morgan('dev'));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -34,6 +40,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/steps', stepRoutes);
 app.use('/api/fitbit', fitbitRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Temporary test endpoint for cron - remove after testing
 app.get('/api/test-cron', async (req, res) => {

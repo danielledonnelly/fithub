@@ -53,6 +53,8 @@ class FitbitController {
 
   static async userNeedsSync(userId) {
     const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
     const jan1 = new Date(today.getFullYear(), 0, 1);
     
     const [rows] = await pool.query(
@@ -60,29 +62,42 @@ class FitbitController {
     );
     const existingDates = new Set(rows.map(r => r.date.toISOString().split('T')[0]));
     
-    // Check if we're missing any days from Jan 1st to today
-    for (let d = new Date(today); d >= jan1; d.setDate(d.getDate() - 1)) {
+    // Check if we're missing any days from Jan 1st to yesterday (not including today)
+    for (let d = new Date(yesterday); d >= jan1; d.setDate(d.getDate() - 1)) {
       const dateStr = d.toISOString().split('T')[0];
       if (!existingDates.has(dateStr)) {
         return true;
       }
     }
     
-    // Check if any of the past 3 days have 0 total steps
+    // Always check if we need to sync the last 3 days
     const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 2); // Today, yesterday, day before = 3 days
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3); // 3 days ago to yesterday
     
-    const [recentRows] = await pool.query(
-      `SELECT date, COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0) as total_steps 
-       FROM steps 
-       WHERE user_id = ? AND date >= ? AND date <= ?`,
-      [userId, threeDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]]
-    );
-    
-    for (const row of recentRows) {
-      if (row.total_steps === 0) {
-        console.log(`Sync needed: ${row.date} has 0 steps`);
+    // Check if any of the last 3 days are missing or need fresh Fitbit data
+    for (let d = new Date(yesterday); d >= threeDaysAgo; d.setDate(d.getDate() - 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      
+      // Check if this day exists in the database
+      const [rows] = await pool.query(
+        `SELECT COALESCE(inputted_steps, 0) as inputted_steps, COALESCE(fitbit_steps, 0) as fitbit_steps,
+                COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0) as total_steps 
+         FROM steps 
+         WHERE user_id = ? AND date = ?`,
+        [userId, dateStr]
+      );
+      
+      if (rows.length === 0) {
+        // Day doesn't exist at all
+        console.log(`Sync needed: ${dateStr} - missing from database`);
         return true;
+      } else {
+        const row = rows[0];
+        // Check if day has 0 total steps OR has inputted steps but no Fitbit data
+        if (row.total_steps === 0 || (row.inputted_steps > 0 && row.fitbit_steps === 0)) {
+          console.log(`Sync needed: ${dateStr} - total=${row.total_steps}, inputted=${row.inputted_steps}, fitbit=${row.fitbit_steps}`);
+          return true;
+        }
       }
     }
     
@@ -148,29 +163,32 @@ class FitbitController {
       
       const daysToSync = [];
       
-      // Check for missing dates from Jan 1st to today
-      for (let d = new Date(today); d >= jan1; d.setDate(d.getDate() - 1)) {
+      // Check for missing dates from Jan 1st to yesterday (not including today)
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      for (let d = new Date(yesterday); d >= jan1; d.setDate(d.getDate() - 1)) {
         const dateStr = d.toISOString().split('T')[0];
         if (!existingDates.has(dateStr)) {
           daysToSync.push(new Date(d));
         }
       }
       
-      // Check for recent days (past 3 days) with 0 steps
+      // Always sync the last 3 days to ensure fresh Fitbit data
+      // This ensures that recent days are always updated with the latest Fitbit data
       const threeDaysAgo = new Date(today);
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 2);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       
-      const [recentRows] = await pool.query(
-        `SELECT date, COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0) as total_steps 
-         FROM steps 
-         WHERE user_id = ? AND date >= ? AND date <= ?`,
-        [userId, threeDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]]
-      );
-      
-      for (const row of recentRows) {
-        if (row.total_steps === 0) {
-          const dateObj = new Date(row.date);
+      // Force sync of the last 3 days regardless of current state
+      for (let d = new Date(yesterday); d >= threeDaysAgo; d.setDate(d.getDate() - 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        const dateObj = new Date(d);
+        
+        // Check if this day already exists in our sync list
+        const alreadyInList = daysToSync.some(day => day.toISOString().split('T')[0] === dateStr);
+        if (!alreadyInList) {
           daysToSync.push(dateObj);
+          console.log(`📅 Force adding ${dateStr} to sync (last 3 days)`);
         }
       }
 

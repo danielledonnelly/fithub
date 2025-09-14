@@ -199,17 +199,6 @@ const Goals = () => {
   const todayProgress = getTodayProgress();
   const currentStreak = getGoalStreak();
 
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="main-content">
-          <div className="text-center py-10 text-fithub-text">
-            Loading goals data...
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container">
@@ -259,41 +248,43 @@ const Goals = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-            <div>
-              <label className="block mb-2 text-sm font-medium text-fithub-white">
-                Daily Goal
-              </label>
-              {isEditingGoals ? (
-                <input
-                  type="number"
-                  value={dailyGoal}
-                  onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none"
-                />
-              ) : (
-                <div className="px-3 py-2 text-sm text-fithub-text bg-fithub-medium-grey border border-fithub-light-grey rounded">
-                  {dailyGoal.toLocaleString()} steps
-                </div>
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Daily Goal Sub-section */}
+            <div className="px-4 py-3 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base text-fithub-white m-0">Daily Goal</h3>
+                {isEditingGoals ? (
+                  <input
+                    type="number"
+                    value={dailyGoal}
+                    onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)}
+                    className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
+                  />
+                ) : (
+                  <div className="text-lg font-semibold text-fithub-white">
+                    {dailyGoal.toLocaleString()}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block mb-2 text-sm font-medium text-fithub-white">
-                Weekly Goal
-              </label>
-              {isEditingGoals ? (
-                <input
-                  type="number"
-                  value={weeklyGoal}
-                  onChange={(e) => setWeeklyGoal(parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none"
-                />
-              ) : (
-                <div className="px-3 py-2 text-sm text-fithub-text bg-fithub-medium-grey border border-fithub-light-grey rounded">
-                  {weeklyGoal.toLocaleString()} steps
-                </div>
-              )}
+            {/* Weekly Goal Sub-section */}
+            <div className="px-4 py-3 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base text-fithub-white m-0">Weekly Goal</h3>
+                {isEditingGoals ? (
+                  <input
+                    type="number"
+                    value={weeklyGoal}
+                    onChange={(e) => setWeeklyGoal(parseInt(e.target.value) || 0)}
+                    className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
+                  />
+                ) : (
+                  <div className="text-lg font-semibold text-fithub-white">
+                    {weeklyGoal.toLocaleString()}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -304,14 +295,14 @@ const Goals = () => {
           
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-bright-red mb-1">
+              <div className="text-2xl font-bold text-fithub-white mb-1">
                 {currentStreak}
               </div>
               <div className="text-xs text-fithub-text">Day Streak</div>
             </div>
             
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-bright-red mb-1">
+              <div className="text-2xl font-bold text-fithub-white mb-1">
                 {weekProgress.goalsMet}/7
               </div>
               <div className="text-xs text-fithub-text">Weekly Goals Met</div>
@@ -332,14 +323,14 @@ const Goals = () => {
           
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4 mb-4">
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-2xl font-bold text-fithub-bright-red mb-1">
+              <div className="text-2xl font-bold text-fithub-white mb-1">
                 {todayProgress.steps.toLocaleString()}
               </div>
               <div className="text-xs text-fithub-text">Steps Today</div>
             </div>
             
             <div className="text-center p-4 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className={`text-2xl font-bold mb-1 ${todayProgress.progress >= 100 ? 'text-fithub-bright-red' : 'text-fithub-bright-red'}`}>
+              <div className="text-2xl font-bold text-fithub-white mb-1">
                 {todayProgress.progress}%
               </div>
               <div className="text-xs text-fithub-text">Goal Progress</div>
@@ -370,7 +361,7 @@ const Goals = () => {
           
           <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mb-4">
             <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-fithub-bright-red">
+              <div className="text-lg font-semibold text-fithub-white">
                 {weekProgress.totalSteps.toLocaleString()}
               </div>
               <div className="text-xs text-fithub-text">Total Steps</div>
@@ -384,14 +375,14 @@ const Goals = () => {
             </div>
             
             <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className="text-lg font-semibold text-fithub-bright-red">
+              <div className="text-lg font-semibold text-fithub-white">
                 {weekProgress.goalsMet}/7
               </div>
               <div className="text-xs text-fithub-text">Goals Met</div>
             </div>
             
             <div className="text-center p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
-              <div className={`text-lg font-semibold ${weekProgress.weeklyProgress >= 100 ? 'text-fithub-bright-red' : 'text-fithub-bright-red'}`}>
+              <div className="text-lg font-semibold text-fithub-white">
                 {weekProgress.weeklyProgress}%
               </div>
               <div className="text-xs text-fithub-text">Weekly Goal</div>
@@ -429,8 +420,8 @@ const Goals = () => {
           
           {/* Goal Line Reference */}
           <div className="text-xs text-fithub-text mt-2 text-center">
-            <span className="text-fithub-bright-red">■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
-            <span className="text-fithub-bright-red">■</span> Below Goal
+            <span className="text-fithub-white">■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
+            <span className="text-fithub-white">■</span> Below Goal
           </div>
         </div>
       </div>
