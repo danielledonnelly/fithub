@@ -70,38 +70,10 @@ class FitbitController {
       }
     }
     
-    // Always check if we need to sync the last 3 days
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3); // 3 days ago to yesterday
-    
-    // Check if any of the last 3 days are missing or need fresh Fitbit data
-    for (let d = new Date(yesterday); d >= threeDaysAgo; d.setDate(d.getDate() - 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      
-      // Check if this day exists in the database
-      const [rows] = await pool.query(
-        `SELECT COALESCE(inputted_steps, 0) as inputted_steps, COALESCE(fitbit_steps, 0) as fitbit_steps,
-                COALESCE(inputted_steps, 0) + COALESCE(fitbit_steps, 0) as total_steps 
-         FROM steps 
-         WHERE user_id = ? AND date = ?`,
-        [userId, dateStr]
-      );
-      
-      if (rows.length === 0) {
-        // Day doesn't exist at all
-        console.log(`Sync needed: ${dateStr} - missing from database`);
-        return true;
-      } else {
-        const row = rows[0];
-        // Check if day has 0 total steps OR has inputted steps but no Fitbit data
-        if (row.total_steps === 0 || (row.inputted_steps > 0 && row.fitbit_steps === 0)) {
-          console.log(`Sync needed: ${dateStr} - total=${row.total_steps}, inputted=${row.inputted_steps}, fitbit=${row.fitbit_steps}`);
-          return true;
-        }
-      }
-    }
-    
-    return false;
+    // ALWAYS sync the past 3 days regardless of current data
+    // This ensures we get the latest Fitbit data for recent days
+    console.log(`Sync needed: updating past 3 days with latest Fitbit data`);
+    return true;
   }
 
   static async startSync(userId) {
@@ -174,8 +146,8 @@ class FitbitController {
         }
       }
       
-      // Always sync the last 3 days to ensure fresh Fitbit data
-      // This ensures that recent days are always updated with the latest Fitbit data
+      // ALWAYS add the past 3 days to sync (regardless of current step count)
+      // This ensures we get the latest data from Fitbit
       const threeDaysAgo = new Date(today);
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
       
@@ -197,7 +169,7 @@ class FitbitController {
         return;
       }
 
-      console.log(`Syncing ${daysToSync.length} days (missing or with 0 steps)`);
+      console.log(`Syncing ${daysToSync.length} days (missing days + past 3 days for latest data)`);
       
       // Initialize sync progress
       syncProgress.set(userId, {

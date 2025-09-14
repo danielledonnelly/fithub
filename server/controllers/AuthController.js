@@ -206,6 +206,36 @@ class AuthController {
     });
   }
 
+  // Upload avatar
+  static async uploadAvatar(req, res) {
+    try {
+      const userId = req.user.sub;
+      
+      if (!req.file) {
+        return res.status(400).json({
+          error: 'No file uploaded'
+        });
+      }
+      
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      
+      // Update user's avatar in database
+      const profile = await AuthService.updateProfile(userId, { avatar: avatarUrl });
+      
+      res.json({
+        message: 'Avatar uploaded successfully',
+        avatarUrl: avatarUrl,
+        profile
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      res.status(400).json({
+        error: 'Avatar upload failed',
+        message: error.message
+      });
+    }
+  }
+
   // Verify token endpoint
   static async verifyToken(req, res) {
     res.json({
