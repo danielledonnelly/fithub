@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const AuthService = require('../services/AuthService');
+const UserModel = require('../models/User');
 
 // Zod schemas for validation (moved from routes)
 const registerSchema = z.object({
@@ -242,6 +243,83 @@ class AuthController {
       message: 'Token is valid',
       user: req.user
     });
+  }
+
+  // Get user goals
+  static async getGoals(req, res) {
+    try {
+      const userId = req.user.sub;
+      
+      // Get user with goal data
+      const user = await UserModel.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          error: 'User not found'
+        });
+      }
+
+      res.json({
+        daily_goal: user.daily_goal,
+        weekly_goal: user.weekly_goal,
+        monthly_goal: user.monthly_goal
+      });
+    } catch (error) {
+      console.error('Get goals error:', error);
+      res.status(400).json({
+        error: 'Failed to fetch goals',
+        message: error.message
+      });
+    }
+  }
+
+  // Update user goals
+  static async updateGoals(req, res) {
+    try {
+      const userId = req.user.sub;
+      const { daily_goal, weekly_goal, monthly_goal } = req.body;
+      
+      // Validate input
+      if (daily_goal !== undefined && (typeof daily_goal !== 'number' || daily_goal < 0)) {
+        return res.status(400).json({
+          error: 'Invalid daily goal format'
+        });
+      }
+      
+      if (weekly_goal !== undefined && (typeof weekly_goal !== 'number' || weekly_goal < 0)) {
+        return res.status(400).json({
+          error: 'Invalid weekly goal format'
+        });
+      }
+      
+      if (monthly_goal !== undefined && (typeof monthly_goal !== 'number' || monthly_goal < 0)) {
+        return res.status(400).json({
+          error: 'Invalid monthly goal format'
+        });
+      }
+
+      // Update user goals
+      const user = await UserModel.updateUser(userId, {
+        daily_goal,
+        weekly_goal,
+        monthly_goal
+      });
+
+      res.json({
+        message: 'Goals updated successfully',
+        goals: {
+          daily_goal: user.daily_goal,
+          weekly_goal: user.weekly_goal,
+          monthly_goal: user.monthly_goal
+        }
+      });
+    } catch (error) {
+      console.error('Update goals error:', error);
+      res.status(400).json({
+        error: 'Failed to update goals',
+        message: error.message
+      });
+    }
   }
 }
 

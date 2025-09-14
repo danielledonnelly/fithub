@@ -38,7 +38,7 @@ const LogStepsForm = ({ onSuccess }) => {
             value={date}
             onChange={e => setDate(e.target.value)}
             required
-            className="px-1.5 py-2 bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded text-fithub-text text-xs w-full h-8 outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+            className="px-3 py-2 text-sm font-sans bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text w-full outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
           />
         </div>
         
@@ -52,7 +52,7 @@ const LogStepsForm = ({ onSuccess }) => {
             onChange={e => setSteps(e.target.value)}
             min="0"
             required
-            className="px-1.5 py-2 bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded text-fithub-text text-xs w-full h-8 outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+            className="px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text w-full outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
       </div>

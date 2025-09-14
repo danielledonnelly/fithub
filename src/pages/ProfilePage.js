@@ -317,7 +317,7 @@ const ProfilePage = () => {
   return (
     <div className="container">
       <div className="main-content">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-1 page-header">
           <div>
             <h1 className="page-title">Profile Settings</h1>
             <p className="contribution-subtitle">
@@ -332,20 +332,21 @@ const ProfilePage = () => {
           </div>
         )}
         
-        <div className="contribution-section">
+        <div className="section">
           <div className="flex justify-between items-center mb-5">
             <h2 className="section-title m-0">Profile Information</h2>
           </div>
 
-          <div className="grid gap-5 max-w-4xl">
-            <div className="flex gap-8 items-start">
-              <div>
-                <label className="block mb-2 text-base font-medium text-fithub-white">
+          <div className="grid gap-5 max-w-6xl">
+            <div className="flex gap-12 items-start p-6">
+              {/* Avatar Container */}
+              <div className="flex-shrink-0">
+                <label className="block mb-3 text-base font-medium text-fithub-white">
                   Avatar
                 </label>
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-3">
                   <div 
-                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 flex items-center justify-center text-2xl sm:text-3xl md:text-4xl lg:text-4xl text-fithub-text bg-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-dark-grey transition-colors group"
+                    className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 flex items-center justify-center text-2xl sm:text-3xl md:text-4xl lg:text-4xl text-fithub-text bg-fithub-light-grey rounded-full overflow-hidden cursor-pointer hover:bg-fithub-dark-grey transition-colors group"
                     style={{ border: '2px solid #30363d' }}
                     onClick={() => document.getElementById('avatar-upload').click()}
                   >
@@ -420,30 +421,33 @@ const ProfilePage = () => {
                 </div>
               </div>
               
-              <div className="flex-shrink-0 w-50">
-                <label className="block mb-2 text-base font-medium text-fithub-white">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
-                />
-              </div>
-              
-              <div className="flex-1">
-                <label className="block mb-2 text-base font-medium text-fithub-white">
-                  Bio
-                </label>
-                <textarea
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  rows="1"
-                  className="w-full px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none resize-y focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
-                />
+              {/* Form Fields Container */}
+              <div className="flex flex-1 gap-8 min-w-0">
+                <div className="flex-[1] min-w-0">
+                  <label className="block mb-3 text-base font-medium text-fithub-white">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+                  />
+                </div>
+                
+                <div className="flex-[2] min-w-0">
+                  <label className="block mb-3 text-base font-medium text-fithub-white">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows="2"
+                    className="w-full px-4 py-3 text-sm font-sans bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none resize-y focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors"
+                  />
+                </div>
               </div>
             </div>
 
@@ -456,8 +460,8 @@ const ProfilePage = () => {
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
           {/* Fitness App Integrations Section */}
-          <div className="contribution-section">
-            <h2 className="contribution-title">Fitness App Integrations</h2>
+          <div className="section">
+            <h2 className="section-title m-0">Fitness App Integrations</h2>
             <p className="contribution-subtitle">
               Connect your fitness apps to automatically sync your step data
             </p>
@@ -497,21 +501,18 @@ const ProfilePage = () => {
           </div>
 
           {/* Data Management Section */}
-          <div className="contribution-section">
-            <h2 className="contribution-title">Data Management</h2>
+          <div className="section">
+            <h2 className="section-title m-0">Data Management</h2>
             <p className="contribution-subtitle">
               Manage your step data and account information
             </p>
             
-            <div className="flex flex-col gap-2 mt-2">
+            <div className="flex flex-col gap-5 mt-4">
               {/* Delete All Steps */}
               <div className="p-2 sm:p-3 lg:p-4 border border-solid border-fithub-light-grey rounded-lg bg-fithub-medium-grey">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="m-0 text-base text-fithub-white">Delete All Step Data</h3>
-                      <p className="text-sm text-fithub-text mt-0 mb-0">
-                        Permanently remove all your step history.
-                      </p>
                   </div>
                   <button
                     onClick={handleDeleteAllSteps}

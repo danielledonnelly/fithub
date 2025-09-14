@@ -204,11 +204,19 @@ module.exports = {
             'font-size': '12px',
           },
         },
-        '.contribution-section': {
+        '.section': {
           'background-color': '#161b22',
           'border': '1px solid #30363d',
           'border-radius': '6px',
-          'padding': '12px 20px',
+          'padding': '20px 24px',
+          'margin': '0 0 20px 0',
+        },
+        '.subsection': {
+          'background-color': '#161b22',
+          'border': '1px solid #30363d',
+          'border-radius': '6px',
+          'padding': '16px 20px',
+          'margin': '0',
         },
         '.contribution-title': {
           'font-size': '18px',
@@ -232,7 +240,12 @@ module.exports = {
         '.contribution-subtitle': {
           'font-size': '14px',
           'color': '#8b949e',
-          'margin': '0 0 20px 0',
+          'margin': '0',
+          'padding': '4px 0',
+        },
+        '.page-header': {
+          'padding-top': '12px',
+          'padding-bottom': '12px',
         },
         '.contribution-graph': {
           'display': 'flex',

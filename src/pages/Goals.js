@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import StepService from '../services/StepService';
+import GoalService from '../services/GoalService';
 
 const Goals = () => {
   const [stepData, setStepData] = useState({});
   const [loading, setLoading] = useState(true);
   const [dailyGoal, setDailyGoal] = useState(10000);
   const [weeklyGoal, setWeeklyGoal] = useState(70000);
+  const [monthlyGoal, setMonthlyGoal] = useState(280000);
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [goalType, setGoalType] = useState('daily'); // daily, weekly, custom
   const [stepStats, setStepStats] = useState({
@@ -31,6 +33,26 @@ const Goals = () => {
       }
     } catch (error) {
       console.error('Failed to fetch step stats:', error);
+    }
+  };
+
+  const fetchGoals = async () => {
+    try {
+      const goals = await GoalService.getGoals();
+      
+      // Use the actual values from the database, with fallbacks for null values
+      setDailyGoal(goals.daily_goal ?? 10000);
+      setWeeklyGoal(goals.weekly_goal ?? 70000);
+      setMonthlyGoal(goals.monthly_goal ?? 280000);
+    } catch (error) {
+      console.error('Failed to fetch goals:', error);
+      // Fall back to localStorage if backend fails
+      const savedDailyGoal = localStorage.getItem('fithub_daily_goal');
+      const savedWeeklyGoal = localStorage.getItem('fithub_weekly_goal');
+      const savedMonthlyGoal = localStorage.getItem('fithub_monthly_goal');
+      if (savedDailyGoal) setDailyGoal(parseInt(savedDailyGoal));
+      if (savedWeeklyGoal) setWeeklyGoal(parseInt(savedWeeklyGoal));
+      if (savedMonthlyGoal) setMonthlyGoal(parseInt(savedMonthlyGoal));
     }
   };
 
@@ -125,9 +147,9 @@ const Goals = () => {
                     console.log('Using combined step data:', result.source);
                   }
                   
-                  // Fetch weekly/monthly stats
+                  // Fetch weekly/monthly stats and goals in parallel
                   if (mounted) {
-                    await fetchStepStats();
+                    await Promise.all([fetchStepStats(), fetchGoals()]);
                   }
                   return;
                 }
@@ -144,9 +166,9 @@ const Goals = () => {
           setStepData(data);
         }
         
-        // Fetch weekly/monthly stats
+        // Fetch weekly/monthly stats and goals in parallel
         if (mounted) {
-          await fetchStepStats();
+          await Promise.all([fetchStepStats(), fetchGoals()]);
         }
       } catch (error) {
         console.error('Failed to fetch step data:', error);
@@ -164,10 +186,22 @@ const Goals = () => {
     };
   }, []);
 
-  const saveGoals = () => {
-    localStorage.setItem('fithub_daily_goal', dailyGoal.toString());
-    localStorage.setItem('fithub_weekly_goal', weeklyGoal.toString());
-    setIsEditingGoals(false);
+  const saveGoals = async () => {
+    try {
+      await GoalService.updateGoals({
+        daily_goal: dailyGoal,
+        weekly_goal: weeklyGoal,
+        monthly_goal: monthlyGoal
+      });
+      setIsEditingGoals(false);
+    } catch (error) {
+      console.error('Failed to save goals:', error);
+      // Fall back to localStorage if backend fails
+      localStorage.setItem('fithub_daily_goal', dailyGoal.toString());
+      localStorage.setItem('fithub_weekly_goal', weeklyGoal.toString());
+      localStorage.setItem('fithub_monthly_goal', monthlyGoal.toString());
+      setIsEditingGoals(false);
+    }
   };
 
   const getRecentDays = (days) => {
@@ -339,7 +373,7 @@ const Goals = () => {
     
     // Mark months that met the goal
     Object.keys(months).forEach(monthKey => {
-      months[monthKey].goalMet = months[monthKey].totalSteps >= (weeklyGoal * 4);
+      months[monthKey].goalMet = months[monthKey].totalSteps >= monthlyGoal;
     });
     
     // Sort months by date and count consecutive from most recent
@@ -367,7 +401,7 @@ const Goals = () => {
   return (
     <div className="container">
       <div className="main-content">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-1 page-header">
           <div>
             <h1 className="page-title">Goals</h1>
             <p className="contribution-subtitle">
@@ -377,7 +411,7 @@ const Goals = () => {
         </div>
 
         {/* Progress */}
-        <div className="contribution-section mb-5">
+        <div className="section mb-5">
           <div className="flex justify-between items-center mb-6">
             <h2 className="section-title m-0">Progress</h2>
             {!isEditingGoals ? (
@@ -419,7 +453,7 @@ const Goals = () => {
                       type="number"
                       value={dailyGoal}
                       onChange={(e) => setDailyGoal(parseInt(e.target.value) || 0)}
-                      className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
+                      className="w-24 px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   ) : (
                     <div className="text-lg font-semibold text-fithub-white">
@@ -454,7 +488,7 @@ const Goals = () => {
                       type="number"
                       value={weeklyGoal}
                       onChange={(e) => setWeeklyGoal(parseInt(e.target.value) || 0)}
-                      className="w-24 px-2 py-1 text-lg bg-fithub-dark-grey border border-fithub-light-grey rounded text-fithub-text outline-none text-right"
+                      className="w-24 px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   ) : (
                     <div className="text-lg font-semibold text-fithub-white">
@@ -484,9 +518,18 @@ const Goals = () => {
                     <div className="text-sm text-fithub-text">
                       {monthlyStreak} month streak
                     </div>
-                    <div className="text-lg font-semibold text-fithub-white">
-                      {(weeklyGoal * 4).toLocaleString()}
-                    </div>
+                    {isEditingGoals ? (
+                      <input
+                        type="number"
+                        value={monthlyGoal}
+                        onChange={(e) => setMonthlyGoal(parseInt(e.target.value) || 0)}
+                        className="w-24 px-3 py-2 text-sm bg-fithub-dark-grey border border-solid border-fithub-light-grey rounded-md text-fithub-text outline-none focus:outline-none focus:ring-0 focus:border-fithub-peach transition-colors text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    ) : (
+                      <div className="text-lg font-semibold text-fithub-white">
+                        {monthlyGoal.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -494,51 +537,17 @@ const Goals = () => {
                 <div className="w-full h-3 bg-fithub-dark-grey rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-fithub-bright-red transition-all duration-300 ease-in-out"
-                    style={{ width: `${Math.min((stepStats.monthlySteps || 0) / (weeklyGoal * 4) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((stepStats.monthlySteps || 0) / monthlyGoal * 100, 100)}%` }}
                   />
                 </div>
                 <div className="text-xs text-fithub-text mt-2">
-                  {Number(stepStats.monthlySteps || 0).toLocaleString()} / {Number(weeklyGoal * 4).toLocaleString()} steps ({Math.round((stepStats.monthlySteps || 0) / (weeklyGoal * 4) * 100)}%)
+                  {Number(stepStats.monthlySteps || 0).toLocaleString()} / {Number(monthlyGoal).toLocaleString()} steps ({Math.round((stepStats.monthlySteps || 0) / monthlyGoal * 100)}%)
                 </div>
               </div>
           </div>
         </div>
 
 
-        {/* Daily Progress Chart */}
-        <div className="contribution-section">
-          <h2 className="contribution-title mb-4">Daily Progress Chart</h2>
-          
-          <div className="flex items-end gap-2 h-30 py-4">
-            {recentDays.map((day, index) => {
-              const heightPercentage = Math.max((day.steps / Math.max(dailyGoal, Math.max(...recentDays.map(d => d.steps)))) * 100, 2);
-              
-              return (
-                <div key={day.date} className="flex-1 flex flex-col items-center">
-                  <div 
-                    className={`w-full rounded-t min-h-1 relative mb-2 transition-all duration-300 ${
-                      day.goalMet ? 'bg-fithub-bright-red' : 'bg-fithub-bright-red'
-                    }`}
-                    style={{ height: `${heightPercentage}%` }}
-                    title={`${day.steps.toLocaleString()} steps`}
-                  />
-                  <div className="text-xs text-fithub-text text-center">
-                    {day.dayName}
-                  </div>
-                  <div className="text-xs text-fithub-text text-center mt-0.5">
-                    {day.steps.toLocaleString()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          {/* Goal Line Reference */}
-          <div className="text-xs text-fithub-text mt-2 text-center">
-            <span className="text-fithub-white">■</span> Goal Met ({dailyGoal.toLocaleString()} steps) &nbsp;&nbsp;
-            <span className="text-fithub-white">■</span> Below Goal
-          </div>
-        </div>
       </div>
     </div>
   );

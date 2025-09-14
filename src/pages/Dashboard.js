@@ -406,7 +406,7 @@ const Dashboard = () => {
         />
 
         
-        <div className="contribution-section">
+        <div className="section">
           <div className="flex justify-between items-center mb-3 max-w-full">
             <h2 className="contribution-title m-0">Step Activity</h2>
             <p className="contribution-subtitle m-0 text-fithub-white text-sm hidden md:block">

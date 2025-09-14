@@ -66,7 +66,7 @@ const Community = () => {
   return (
     <div className="container">
       <div className="main-content">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-1 page-header">
           <div>
             <h1 className="page-title">Community</h1>
             <p className="contribution-subtitle">
@@ -76,7 +76,7 @@ const Community = () => {
         </div>
 
         {/* User Search */}
-        <div className="contribution-section mb-5">
+        <div className="section mb-5">
           <h2 className="section-title mb-4">Find Users</h2>
           <div className="relative">
             <input
@@ -111,7 +111,7 @@ const Community = () => {
         {/* Leaderboards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Daily Leaderboard */}
-          <div className="contribution-section">
+          <div className="section">
             <h2 className="section-title mb-4">Daily Leaderboard</h2>
             <div className="space-y-2">
               {mockUsers.sort((a, b) => b.dailySteps - a.dailySteps).slice(0, 10).map((user, index) => (
@@ -126,7 +126,7 @@ const Community = () => {
           </div>
 
           {/* Weekly Leaderboard */}
-          <div className="contribution-section">
+          <div className="section">
             <h2 className="section-title mb-4">Weekly Leaderboard</h2>
             <div className="space-y-2">
               {mockUsers.sort((a, b) => b.weeklySteps - a.weeklySteps).slice(0, 10).map((user, index) => (
@@ -141,7 +141,7 @@ const Community = () => {
           </div>
 
           {/* Monthly Leaderboard */}
-          <div className="contribution-section">
+          <div className="section">
             <h2 className="section-title mb-4">Monthly Leaderboard</h2>
             <div className="space-y-2">
               {mockUsers.sort((a, b) => b.monthlySteps - a.monthlySteps).slice(0, 10).map((user, index) => (

@@ -19,4 +19,8 @@ router.post('/avatar', upload.single('avatar'), AuthController.uploadAvatar);
 router.post('/logout', AuthController.logout);
 router.get('/verify', AuthController.verifyToken);
 
+// Goal routes
+router.get('/goals', AuthController.getGoals);
+router.put('/goals', AuthController.updateGoals);
+
 module.exports = router;
