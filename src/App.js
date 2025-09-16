@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
 import Community from './pages/Community';
 import ProfilePage from './pages/ProfilePage';
+import UserProfile from './pages/UserProfile';
 import Auth from './pages/Auth';
 import BaseStyles from './components/BaseStyles';
 
@@ -23,6 +24,7 @@ function App() {
             <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           </Routes>
         </div>
       </Router>

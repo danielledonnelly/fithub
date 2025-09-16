@@ -23,4 +23,8 @@ router.get('/verify', AuthController.verifyToken);
 router.get('/goals', AuthController.getGoals);
 router.put('/goals', AuthController.updateGoals);
 
+// Community routes
+router.get('/search', AuthController.searchUsers);
+router.get('/leaderboard', AuthController.getLeaderboard);
+
 module.exports = router;

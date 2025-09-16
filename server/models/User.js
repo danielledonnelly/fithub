@@ -56,6 +56,35 @@ class UserModel {
     return rows[0] || null;
   }
 
+  // Search users by username
+  static async searchUsers(query, limit = 10) {
+    const [rows] = await pool.query(
+      'SELECT id, username, display_name, bio, avatar FROM users WHERE username LIKE ? OR display_name LIKE ? ORDER BY username LIMIT ?',
+      [`%${query}%`, `%${query}%`, limit]
+    );
+    return rows;
+  }
+
+  // Get all users for leaderboards (with step data)
+  static async getAllUsersForLeaderboard() {
+    const [rows] = await pool.query(`
+      SELECT 
+        u.id, 
+        u.username, 
+        u.display_name, 
+        u.bio, 
+        u.avatar,
+        COALESCE(SUM(CASE WHEN DATE(s.date) = CURDATE() THEN s.steps ELSE 0 END), 0) as daily_steps,
+        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN s.steps ELSE 0 END), 0) as weekly_steps,
+        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN s.steps ELSE 0 END), 0) as monthly_steps
+      FROM users u
+      LEFT JOIN steps s ON u.id = s.user_id
+      GROUP BY u.id, u.username, u.display_name, u.bio, u.avatar
+      ORDER BY u.username
+    `);
+    return rows;
+  }
+
   // Update user
   static async updateUser(id, updates) {
     // Build dynamic update query

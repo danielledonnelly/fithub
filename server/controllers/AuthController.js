@@ -157,6 +157,40 @@ class AuthController {
     }
   }
 
+  // Search users
+  static async searchUsers(req, res) {
+    try {
+      const { query } = req.query;
+      
+      if (!query || query.length < 2) {
+        return res.json({ users: [] });
+      }
+
+      const users = await UserModel.searchUsers(query);
+      res.json({ users });
+    } catch (error) {
+      console.error('User search error:', error);
+      res.status(500).json({
+        error: 'Search failed',
+        message: 'Unable to search users'
+      });
+    }
+  }
+
+  // Get leaderboard data
+  static async getLeaderboard(req, res) {
+    try {
+      const users = await UserModel.getAllUsersForLeaderboard();
+      res.json({ users });
+    } catch (error) {
+      console.error('Leaderboard fetch error:', error);
+      res.status(500).json({
+        error: 'Leaderboard fetch failed',
+        message: 'Unable to fetch leaderboard data'
+      });
+    }
+  }
+
   // Update user profile
   static async updateProfile(req, res) {
     try {
