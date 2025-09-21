@@ -56,6 +56,15 @@ class UserModel {
     return rows[0] || null;
   }
 
+  // Get user by username
+  static async findByUsername(username) {
+    const [rows] = await pool.query(
+      'SELECT id, username, email, display_name, bio, avatar, daily_goal, weekly_goal, monthly_goal FROM users WHERE username = ?',
+      [username]
+    );
+    return rows[0] || null;
+  }
+
   // Search users by username
   static async searchUsers(query, limit = 10) {
     const [rows] = await pool.query(
@@ -74,9 +83,9 @@ class UserModel {
         u.display_name, 
         u.bio, 
         u.avatar,
-        COALESCE(SUM(CASE WHEN DATE(s.date) = CURDATE() THEN s.steps ELSE 0 END), 0) as daily_steps,
-        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN s.steps ELSE 0 END), 0) as weekly_steps,
-        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN s.steps ELSE 0 END), 0) as monthly_steps
+        COALESCE(SUM(CASE WHEN DATE(s.date) = CURDATE() THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as daily_steps,
+        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as weekly_steps,
+        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as monthly_steps
       FROM users u
       LEFT JOIN steps s ON u.id = s.user_id
       GROUP BY u.id, u.username, u.display_name, u.bio, u.avatar

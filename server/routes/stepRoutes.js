@@ -30,6 +30,9 @@ router.post('/regenerate', StepController.regenerateData);
 // Upload screenshot for step extraction
 router.post('/upload-screenshot', upload.single('screenshot'), StepController.uploadScreenshot);
 
+// Get step data for a user by username (for profile pages)
+router.get('/user/:username', StepController.getStepsForUser);
+
 // Get step data for a specific date
 router.get('/:date', StepController.getStepsByDate);
 

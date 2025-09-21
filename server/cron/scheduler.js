@@ -3,6 +3,7 @@ const CronService = require('../services/CronService');
 
 // Schedule recent days sync every 6 hours (Newfoundland time)
 // Cron pattern: '0 0,6,12,18 * * *' means at 00:00, 06:00, 12:00, 18:00 local time
+// Syncs the last 7 days for all users with Fitbit connections
 cron.schedule('0 0,6,12,18 * * *', async () => {
   console.log('Cron: Starting scheduled recent days sync...');
   try {
@@ -12,4 +13,4 @@ cron.schedule('0 0,6,12,18 * * *', async () => {
   }
 });
 
-console.log('Cron scheduler initialized - recent days sync every 6 hours (00:00, 06:00, 12:00, 18:00)');
+console.log('Cron scheduler initialized - recent 7 days sync every 6 hours (00:00, 06:00, 12:00, 18:00)');

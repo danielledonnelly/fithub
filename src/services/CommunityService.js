@@ -46,6 +46,26 @@ class CommunityService {
       throw error;
     }
   }
+
+  // Get user by username
+  async getUserByUsername(username) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/user/${encodeURIComponent(username)}`, {
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      throw error;
+    }
+  }
 }
 
 export default new CommunityService();

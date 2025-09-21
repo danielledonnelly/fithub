@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LogStepsForm from './LogStepsForm';
 import ScreenshotUpload from './ScreenshotUpload';
 
-const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess, stepData }) => {
+const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess, stepData, showInteractiveElements = true, username }) => {
   const [weeklySteps, setWeeklySteps] = useState(0);
   const [monthlySteps, setMonthlySteps] = useState(0);
 
@@ -13,31 +13,60 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess,
     avatar: profile?.avatar || ''
   };
 
-  // Fetch weekly and monthly step stats
+  // Calculate weekly and monthly steps from stepData
   useEffect(() => {
-    const fetchStepStats = async () => {
-      try {
-        const token = localStorage.getItem('fithub_token');
-        if (!token) return;
+    if (stepData && typeof stepData === 'object') {
+      const today = new Date();
+      const oneWeekAgo = new Date(today);
+      oneWeekAgo.setDate(today.getDate() - 7);
+      const oneMonthAgo = new Date(today);
+      oneMonthAgo.setDate(today.getDate() - 30);
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps/stats`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+      let weekly = 0;
+      let monthly = 0;
 
-        if (response.ok) {
-          const stats = await response.json();
-          setWeeklySteps(stats.weeklySteps || 0);
-          setMonthlySteps(stats.monthlySteps || 0);
+      Object.entries(stepData).forEach(([dateStr, steps]) => {
+        const date = new Date(dateStr);
+        if (date >= oneWeekAgo) {
+          weekly += steps;
         }
-      } catch (error) {
-        console.error('Error fetching step stats:', error);
-      }
-    };
+        if (date >= oneMonthAgo) {
+          monthly += steps;
+        }
+      });
 
-    fetchStepStats();
-  }, [stepData]); // Re-fetch when stepData changes
+      setWeeklySteps(weekly);
+      setMonthlySteps(monthly);
+    }
+  }, [stepData]);
+
+  // For current user's profile, fetch stats from API
+  useEffect(() => {
+    if (showInteractiveElements) {
+      const fetchStepStats = async () => {
+        try {
+          const token = localStorage.getItem('fithub_token');
+          if (!token) return;
+
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/steps/stats`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const stats = await response.json();
+            setWeeklySteps(stats.weeklySteps || 0);
+            setMonthlySteps(stats.monthlySteps || 0);
+          }
+        } catch (error) {
+          console.error('Error fetching step stats:', error);
+        }
+      };
+
+      fetchStepStats();
+    }
+  }, [stepData, showInteractiveElements]);
 
   return (
     <div className="profile-section">
@@ -61,7 +90,12 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess,
       <div className="profile-content">
         <div className="profile-header">
           <h1 className="profile-name">{safeProfile.name}</h1>
-          <p className="profile-bio">{safeProfile.bio}</p>
+          {username && (
+            <p className="profile-bio">@{username}</p>
+          )}
+          {safeProfile.bio && (
+            <p className="profile-bio">{safeProfile.bio}</p>
+          )}
         </div>
          <div className="profile-stats">
            <div className="stat">
@@ -76,31 +110,23 @@ const Profile = ({ profile, totalWorkouts, currentStreak, totalSteps, onSuccess,
              <div className="stat-number">{(Number(totalSteps) || 0).toLocaleString()}</div>
              <div className="stat-label">Total Steps</div>
            </div>
-          {/* Commented out for now
-          <div className="stat">
-            <div className="stat-number">{profile.monthsActive}</div>
-            <div className="stat-label">Months Active</div>
-          </div>
-          <div className="stat">
-            <div className="stat-number">{profile.fitnessScore}</div>
-            <div className="stat-label">Fitness Score</div>
-          </div>
-          */}
         </div>
       </div>
       
-      <div className="flex flex-row gap-3 min-w-[400px] max-w-[500px]">
-        <div className="bg-fithub-medium-grey border border-solid border-fithub-light-grey rounded p-3 flex-1">
-          <h3 className="text-sm font-semibold text-fithub-white mb-2 m-0">
-            Log Steps
-          </h3>
-          <LogStepsForm onSuccess={onSuccess} />
+      {showInteractiveElements && (
+        <div className="flex flex-row gap-3 min-w-[400px] max-w-[500px]">
+          <div className="bg-fithub-medium-grey border border-solid border-fithub-light-grey rounded p-3 flex-1">
+            <h3 className="text-sm font-semibold text-fithub-white mb-2 m-0">
+              Log Steps
+            </h3>
+            <LogStepsForm onSuccess={onSuccess} />
+          </div>
+          
+          <div className="bg-fithub-medium-grey border border-solid border-fithub-light-grey rounded p-3 flex-1">
+            <ScreenshotUpload onSuccess={onSuccess} />
+          </div>
         </div>
-        
-        <div className="bg-fithub-medium-grey border border-solid border-fithub-light-grey rounded p-3 flex-1">
-          <ScreenshotUpload onSuccess={onSuccess} />
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -40,19 +40,19 @@ class CronService {
     }
   }
 
-  // Sync the last 3 days for a specific user to catch any missed data
+  // Sync the last 7 days for a specific user to catch any missed data
   static async syncRecentDaysForUser(userId) {
     const today = new Date();
     const daysToSync = [];
     
-    // Get today, yesterday, and day before yesterday (starting with today)
-    for (let i = 0; i < 3; i++) {
+    // Get the last 7 days (starting with today)
+    for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       daysToSync.push(date);
     }
     
-    console.log(`Cron: Syncing last 3 days for user ${userId} (starting with today)`);
+    console.log(`Cron: Syncing last 7 days for user ${userId} (starting with today)`);
     
     // Use the specific days sync method to update these days
     await FitbitController.syncSpecificDays(userId, daysToSync);

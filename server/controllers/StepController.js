@@ -1,5 +1,6 @@
 // server/controllers/StepController.js
 const StepService = require('../services/StepService');
+const UserModel = require('../models/User');
 
 class StepController {
   // Get all step data with optional date filtering
@@ -192,6 +193,32 @@ class StepController {
       });
     } catch (error) {
       console.error('Error getting total stats:', error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  // Get step data for a user by username (for profile pages)
+  static async getStepsForUser(req, res) {
+    try {
+      const { username } = req.params;
+      
+      if (!username) {
+        return res.status(400).json({ error: 'Username is required' });
+      }
+
+      // First, find the user by username
+      const user = await UserModel.findByUsername(username);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Get step data for this user
+      const stepData = await StepService.getAllSteps(user.id);
+      
+      // Return in the same format as other step endpoints
+      res.json({ steps: stepData });
+    } catch (error) {
+      console.error('Error getting steps for user:', error);
       res.status(400).json({ error: error.message });
     }
   }

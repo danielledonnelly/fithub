@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import ContributionGraph from '../components/ContributionGraph';
+import Profile from '../components/Profile';
 import CommunityService from '../services/CommunityService';
+import StepService from '../services/StepService';
 
 const UserProfile = () => {
   const { username } = useParams();
-  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stepData, setStepData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [totalSteps, setTotalSteps] = useState(0);
+  const [activeDays, setActiveDays] = useState(0);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -17,46 +20,21 @@ const UserProfile = () => {
         setLoading(true);
         setError(null);
         
-        // Search for the user by username
-        const searchResult = await CommunityService.searchUsers(username);
-        const foundUser = searchResult.users.find(u => u.username === username);
+        // Get user data by username
+        const userResponse = await CommunityService.getUserByUsername(username);
+        setUser(userResponse.user);
         
-        if (!foundUser) {
-          setError('User not found');
-          return;
-        }
-        
-        setUser(foundUser);
-        
-        // Get leaderboard data to get step information
-        const leaderboardData = await CommunityService.getLeaderboard();
-        const userWithSteps = leaderboardData.users.find(u => u.username === username);
-        
-        if (userWithSteps) {
-          // Create step data object for the contribution graph
-          // For now, we'll create mock data based on their totals
-          // In a real implementation, you'd want to fetch their actual daily step data
-          const mockStepData = {};
-          const today = new Date();
-          
-          // Generate some mock data for the last 365 days
-          for (let i = 0; i < 365; i++) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            // Use their daily average or generate some variation
-            const dailyAverage = Math.floor(userWithSteps.daily_steps / 7); // Rough weekly average
-            const variation = Math.floor(Math.random() * dailyAverage * 0.5);
-            mockStepData[dateStr] = Math.max(0, dailyAverage + variation);
-          }
-          
-          setStepData(mockStepData);
-        }
+        // Get actual step data for this user
+        const stepResponse = await StepService.getStepsForUser(username);
+        setStepData(stepResponse.steps || {});
         
       } catch (error) {
         console.error('Error loading user profile:', error);
-        setError('Failed to load user profile');
+        if (error.message.includes('404') || error.message.includes('not found')) {
+          setError('User not found');
+        } else {
+          setError('Failed to load user profile');
+        }
       } finally {
         setLoading(false);
       }
@@ -67,9 +45,20 @@ const UserProfile = () => {
     }
   }, [username]);
 
-  const handleBackToCommunity = () => {
-    navigate('/community');
-  };
+  // Calculate stats from step data
+  useEffect(() => {
+    if (stepData && typeof stepData === 'object') {
+      const total = Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
+      const active = Object.values(stepData).filter(steps => steps > 0).length;
+      setTotalSteps(total);
+      setActiveDays(active);
+    }
+  }, [stepData]);
+
+  const activeDaysText = useMemo(() => {
+    if (!stepData || typeof stepData !== 'object') return 0;
+    return Object.values(stepData).filter(steps => steps > 0).length;
+  }, [stepData]);
 
   if (loading) {
     return (
@@ -88,140 +77,85 @@ const UserProfile = () => {
           <div className="text-center py-8">
             <h1 className="text-2xl font-bold text-fithub-white mb-4">User Not Found</h1>
             <p className="text-fithub-text mb-4">The user "{username}" could not be found.</p>
-            <button
-              onClick={handleBackToCommunity}
-              className="px-4 py-2 bg-fithub-bright-red text-white rounded hover:bg-fithub-dark-red transition-colors"
-            >
-              Back to Community
-            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Calculate stats from step data
-  const totalSteps = Object.values(stepData).reduce((sum, steps) => sum + steps, 0);
-  const activeDays = Object.values(stepData).filter(steps => steps > 0).length;
-  const currentStreak = calculateStreak(stepData);
-  const maxStreak = calculateMaxStreak(stepData);
+  // Create profile object for the Profile component
+  const profileData = {
+    name: user.display_name || user.username,
+    bio: user.bio || '',
+    avatar: user.avatar || ''
+  };
 
   return (
     <div className="container">
       <div className="main-content">
-        <div className="flex justify-between items-center mb-1 page-header">
-          <div>
-            <button
-              onClick={handleBackToCommunity}
-              className="text-fithub-text hover:text-fithub-white transition-colors mb-2"
-            >
-              ← Back to Community
-            </button>
-            <h1 className="page-title">{user.display_name || user.username}</h1>
-            <p className="contribution-subtitle">
-              @{user.username}
+        {error && (
+          <div className="px-3 py-2 bg-fithub-bright-red border border-fithub-red rounded text-fithub-white mb-5 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Community Profile Header */}
+        <div className="mb-4 p-3 bg-fithub-dark-grey border border-fithub-light-grey rounded">
+          <div className="flex items-center gap-2 text-fithub-text text-sm">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+            </svg>
+            <span>Viewing {user.display_name || user.username}'s profile from Community</span>
+          </div>
+        </div>
+
+        <Profile 
+          profile={profileData}
+          totalSteps={totalSteps}
+          stepData={stepData}
+          username={username}
+          showInteractiveElements={false}
+          onSuccess={() => {}}
+        />
+
+        <div className="section">
+          <div className="flex justify-between items-center mb-3 max-w-full">
+            <h2 className="contribution-title m-0">Step Activity</h2>
+            <p className="contribution-subtitle m-0 text-fithub-white text-sm hidden md:block">
+              {activeDays} active days in the last year
             </p>
-          </div>
-        </div>
-
-        {/* User Info */}
-        <div className="section mb-5">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-fithub-dark-grey rounded-full flex items-center justify-center">
-              {user.avatar ? (
-                <img 
-                  src={user.avatar} 
-                  alt={user.display_name || user.username}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-2xl text-fithub-white">
-                  {(user.display_name || user.username).charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-fithub-white">
-                {user.display_name || user.username}
-              </h2>
-              <p className="text-fithub-text">@{user.username}</p>
-              {user.bio && (
-                <p className="text-fithub-text mt-2">{user.bio}</p>
-              )}
+            <div className="flex gap-2">
+              <div className="relative group">
+                <svg 
+                  className="w-5 h-5 text-fithub-text hover:text-fithub-white transition-colors"
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <div className="absolute bottom-full right-0 mb-1 px-4 py-2 bg-fithub-dark-grey border border-solid border-fithub-light-grey text-fithub-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 z-10">
+                  <p className="mb-2">
+                    This grid visualizes {user.display_name || user.username}'s activity each day, showing their step data from FitBit and manual entries.
+                  </p>
+                  <p className="mb-2">
+                    The data is synced periodically to keep it up to date.
+                  </p>
+                  <p>
+                    This is a read-only view of their profile.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
-          <div className="section text-center">
-            <div className="text-2xl font-bold text-fithub-bright-red">
-              {totalSteps.toLocaleString()}
-            </div>
-            <div className="text-sm text-fithub-text">Total Steps</div>
-          </div>
-          <div className="section text-center">
-            <div className="text-2xl font-bold text-fithub-bright-red">
-              {activeDays}
-            </div>
-            <div className="text-sm text-fithub-text">Active Days</div>
-          </div>
-          <div className="section text-center">
-            <div className="text-2xl font-bold text-fithub-bright-red">
-              {currentStreak}
-            </div>
-            <div className="text-sm text-fithub-text">Current Streak</div>
-          </div>
-          <div className="section text-center">
-            <div className="text-2xl font-bold text-fithub-bright-red">
-              {maxStreak}
-            </div>
-            <div className="text-sm text-fithub-text">Best Streak</div>
-          </div>
-        </div>
-
-        {/* Contribution Graph */}
-        <div className="section mb-5">
-          <h2 className="section-title mb-4">Activity Overview</h2>
-          <ContributionGraph stepData={stepData} />
+          
+          <ContributionGraph 
+            data={stepData}
+            isSyncing={false}
+          />
         </div>
       </div>
     </div>
   );
 };
-
-// Helper function to calculate current streak
-function calculateStreak(stepData) {
-  const dates = Object.keys(stepData).sort().reverse();
-  let streak = 0;
-  
-  for (const date of dates) {
-    if (stepData[date] > 0) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-  
-  return streak;
-}
-
-// Helper function to calculate maximum streak
-function calculateMaxStreak(stepData) {
-  const dates = Object.keys(stepData).sort();
-  let maxStreak = 0;
-  let currentStreak = 0;
-  
-  for (const date of dates) {
-    if (stepData[date] > 0) {
-      currentStreak++;
-      maxStreak = Math.max(maxStreak, currentStreak);
-    } else {
-      currentStreak = 0;
-    }
-  }
-  
-  return maxStreak;
-}
 
 export default UserProfile;

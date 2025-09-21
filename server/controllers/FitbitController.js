@@ -6,6 +6,7 @@ const {pool} = require('../db');
 const activeSyncs = new Set();
 const syncProgress = new Map(); // Track sync progress for each user
 const rateLimitCooldowns = new Map(); // Track rate limit cooldowns: userId -> { until: timestamp, reason: string }
+const lastSyncTime = new Map(); // Track last sync time: userId -> timestamp
 
 class FitbitController {
   static async getAuthUrl(req, res) {
@@ -56,6 +57,13 @@ class FitbitController {
     if (activeSyncs.has(userId)) {
       console.log(`Sync already in progress for user ${userId}, skipping`);
       return; // Already syncing
+    }
+    
+    // Check 15-minute cooldown
+    const lastSync = lastSyncTime.get(userId);
+    if (lastSync && Date.now() - lastSync < 15 * 60 * 1000) {
+      console.log(`User ${userId} sync cooldown active, skipping`);
+      return;
     }
     
     // Check if user is in rate limit cooldown
@@ -112,13 +120,13 @@ class FitbitController {
       
       const daysToSync = [];
       
-      // ALWAYS add TODAY first, then the past 3 days (regardless of current step count)
+      // ALWAYS add TODAY first, then the past 6 days (regardless of current step count)
       // This ensures we get the latest data from Fitbit, starting with today
-      const threeDaysAgo = new Date(today);
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const sixDaysAgo = new Date(today);
+      sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
       
-      // Start with TODAY and go backwards for the last 4 days (today + past 3)
-      for (let d = new Date(today); d >= threeDaysAgo; d.setDate(d.getDate() - 1)) {
+      // Start with TODAY and go backwards for the last 7 days (today + past 6)
+      for (let d = new Date(today); d >= sixDaysAgo; d.setDate(d.getDate() - 1)) {
         const dateStr = d.toISOString().split('T')[0];
         const dateObj = new Date(d);
         
@@ -128,11 +136,11 @@ class FitbitController {
           }
       }
       
-      // Then add missing historical dates from Jan 1st to 4 days ago
-      const fourDaysAgo = new Date(today);
-      fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+      // Then add missing historical dates from Jan 1st to 7 days ago
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      for (let d = new Date(fourDaysAgo); d >= jan1; d.setDate(d.getDate() - 1)) {
+      for (let d = new Date(sevenDaysAgo); d >= jan1; d.setDate(d.getDate() - 1)) {
         const dateStr = d.toISOString().split('T')[0];
         if (!existingDates.has(dateStr)) {
           daysToSync.push(new Date(d));
@@ -307,6 +315,9 @@ class FitbitController {
       
       console.log(`✅ Sync complete: ${synced} days synced`);
       
+      // Record sync time
+      lastSyncTime.set(userId, Date.now());
+      
       // Mark sync as completed
       syncProgress.set(userId, {
         total: daysToSync.length,
@@ -322,6 +333,9 @@ class FitbitController {
       
     } catch (error) {
       console.error(`Sync failed:`, error.message);
+      
+      // Record sync time even for failed syncs
+      lastSyncTime.set(userId, Date.now());
       
       // Mark sync as failed
       syncProgress.set(userId, {

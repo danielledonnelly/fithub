@@ -69,6 +69,23 @@ const Community = () => {
             <div className="text-lg font-semibold text-fithub-bright-red">
               #{rank}
             </div>
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+              {user.avatar ? (
+                <img 
+                  src={user.avatar.startsWith('data:') ? user.avatar : `${process.env.REACT_APP_BASE_URL || 'http://localhost:5001'}${user.avatar}`} 
+                  alt={`${displayName}'s avatar`} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Avatar failed to load:', e);
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm text-fithub-text bg-fithub-light-grey">
+                  ?
+                </div>
+              )}
+            </div>
             <span
               onClick={() => openUserProfile(user.username)}
               className="text-base text-fithub-white hover:text-fithub-bright-red transition-colors cursor-pointer"

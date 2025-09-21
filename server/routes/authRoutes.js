@@ -26,5 +26,6 @@ router.put('/goals', AuthController.updateGoals);
 // Community routes
 router.get('/search', AuthController.searchUsers);
 router.get('/leaderboard', AuthController.getLeaderboard);
+router.get('/user/:username', AuthController.getUserByUsername);
 
 module.exports = router;
