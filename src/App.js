@@ -23,7 +23,7 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           </Routes>
         </div>

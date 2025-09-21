@@ -319,7 +319,7 @@ const ProfilePage = () => {
       <div className="main-content">
         <div className="flex justify-between items-center mb-1 page-header">
           <div>
-            <h1 className="page-title">Profile Settings</h1>
+            <h1 className="page-title">Settings</h1>
             <p className="contribution-subtitle">
               Manage your profile information and preferences
             </p>

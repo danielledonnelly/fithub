@@ -76,6 +76,16 @@ class UserModel {
 
   // Get all users for leaderboards (with step data)
   static async getAllUsersForLeaderboard() {
+    // Calculate date ranges to match the dashboard/Profile component logic
+    const today = new Date();
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    // Format dates for MySQL query (YYYY-MM-DD)
+    const todayStr = today.toISOString().split('T')[0];
+    const weekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+    const monthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+
     const [rows] = await pool.query(`
       SELECT 
         u.id, 
@@ -83,14 +93,14 @@ class UserModel {
         u.display_name, 
         u.bio, 
         u.avatar,
-        COALESCE(SUM(CASE WHEN DATE(s.date) = CURDATE() THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as daily_steps,
-        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as weekly_steps,
-        COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as monthly_steps
+        COALESCE(SUM(CASE WHEN DATE(s.date) = ? THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as daily_steps,
+        COALESCE(SUM(CASE WHEN s.date >= ? THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as weekly_steps,
+        COALESCE(SUM(CASE WHEN s.date >= ? THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as monthly_steps
       FROM users u
       LEFT JOIN steps s ON u.id = s.user_id
       GROUP BY u.id, u.username, u.display_name, u.bio, u.avatar
       ORDER BY u.username
-    `);
+    `, [todayStr, weekAgoStr, monthAgoStr]);
     return rows;
   }
 

@@ -94,7 +94,7 @@ const Community = () => {
             </span>
           </div>
           <div className="text-base text-fithub-white">
-            {steps.toLocaleString()} steps
+            {Number(steps).toLocaleString('en-US')} steps
           </div>
         </div>
       </div>

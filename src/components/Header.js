@@ -45,10 +45,10 @@ const Header = () => {
                   Community
                 </Link>
                 <Link 
-                  to="/profile" 
-                  className={`nav-link text-sm lg:text-base ${location.pathname === '/profile' ? 'active' : ''}`}
+                  to="/settings" 
+                  className={`nav-link text-sm lg:text-base ${location.pathname === '/settings' ? 'active' : ''}`}
                 >
-                  Profile
+                  Settings
                 </Link>
               </nav>
               
