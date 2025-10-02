@@ -72,8 +72,8 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server - bind to all interfaces for nginx
-app.listen(PORT, '0.0.0.0', () => {
+// Start server
+app.listen(PORT, () => {
   console.log(`FitHub API running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
