@@ -1,5 +1,5 @@
 // server/controllers/StepController.js
-const StepService = require('../services/stepService');
+const StepService = require('../services/StepService');
 const UserModel = require('../models/User');
 
 class StepController {
