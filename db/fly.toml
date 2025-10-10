@@ -1,0 +1,39 @@
+# fly.toml app configuration file generated for db-late-brook-4637 on 2025-10-09T21:27:33-02:30
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'db-late-brook-4637'
+primary_region = 'yyz'
+
+[build]
+  image = 'mysql:8.0.37'
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 2048
+
+# The [processes] section is different for 8+, 8.4, and 5.7. Use the one that matches your version.
+# Use the following for versions 8 to 8.3:
+[processes]
+  app = """--datadir /data/mysql \
+    --default-authentication-plugin mysql_native_password"""
+
+# Uncomment and use the following for 8.4:
+# [processes]
+#  app = """--datadir /data/mysql \
+#    --mysql-native-password=ON"""
+
+# Uncomment and use the following for 5.7:
+# [processes]
+#  app = "--datadir /data/mysql"
+
+# Add the following sections for all versions
+[mounts]
+  source = "mysqldata"
+  destination = "/data"
+
+[env]
+  MYSQL_DATABASE = "some_db"
+  MYSQL_USER = "non_root_user"
