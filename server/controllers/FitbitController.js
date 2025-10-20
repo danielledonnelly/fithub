@@ -116,7 +116,14 @@ class FitbitController {
       const [rows] = await pool.query(
         'SELECT date FROM steps WHERE user_id = ?', [userId]
       );
-      const existingDates = new Set(rows.map(r => r.date.toISOString().split('T')[0]));
+      // Convert database dates to local date strings
+      const existingDates = new Set(rows.map(r => {
+        const date = new Date(r.date);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }));
       
       const daysToSync = [];
       
@@ -127,11 +134,21 @@ class FitbitController {
       
       // Start with TODAY and go backwards for the last 7 days (today + past 6)
       for (let d = new Date(today); d >= sixDaysAgo; d.setDate(d.getDate() - 1)) {
-        const dateStr = d.toISOString().split('T')[0];
+        // Use local date formatting instead of UTC
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         const dateObj = new Date(d);
         
           // Always add recent days to ensure they get updated with latest Fitbit data
-          if (!daysToSync.some(day => day.toISOString().split('T')[0] === dateStr)) {
+          if (!daysToSync.some(existingDay => {
+            const existingYear = existingDay.getFullYear();
+            const existingMonth = String(existingDay.getMonth() + 1).padStart(2, '0');
+            const existingDayNum = String(existingDay.getDate()).padStart(2, '0');
+            const existingDateStr = `${existingYear}-${existingMonth}-${existingDayNum}`;
+            return existingDateStr === dateStr;
+          })) {
             daysToSync.push(dateObj);
           }
       }
@@ -141,7 +158,11 @@ class FitbitController {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
       for (let d = new Date(sevenDaysAgo); d >= jan1; d.setDate(d.getDate() - 1)) {
-        const dateStr = d.toISOString().split('T')[0];
+        // Use local date formatting instead of UTC
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         if (!existingDates.has(dateStr)) {
           daysToSync.push(new Date(d));
         }

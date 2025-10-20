@@ -38,8 +38,9 @@ class StepModel {
     // Convert to the format expected by frontend
     const stepData = {};
     rows.forEach(row => {
-      // row.date is a string in 'YYYY-MM-DD' format
-      stepData[row.date] = row.total_steps;
+      // Ensure row.date is converted to string format (MySQL driver may return Date objects)
+      const dateStr = row.date instanceof Date ? row.date.toISOString().split('T')[0] : row.date;
+      stepData[dateStr] = row.total_steps;
     });
     
     return stepData;

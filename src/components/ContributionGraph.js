@@ -33,6 +33,7 @@ function addDays(date, days) {
 const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
   const [activityMode, setActivityMode] = useState('active');
   
+  
   // This graph shows year-to-date data (January 1st to current date)
   // It maintains grid alignment by starting from the previous Sunday
   // All dates use the device's local timezone
@@ -43,27 +44,13 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
     return savedGoal ? parseInt(savedGoal) : (propDailyGoal || 10000);
   };
 
-  // Convert data keys from Date objects to YYYY-MM-DD format
+  // Use data directly without any conversion - the backend already sends the correct format
   const normalizedData = useMemo(() => {
-    const result = {};
-    if (data && typeof data === 'object') {
-      Object.keys(data).forEach(key => {
-        try {
-          // Parse the date key and convert to YYYY-MM-DD format using local time
-          const date = new Date(key);
-          if (!isNaN(date.getTime())) {
-            const dateString = formatDateLocal(date);
-            result[dateString] = data[key];
-          }
-        } catch (e) {
-          // If key is already in YYYY-MM-DD format, use it as is
-          if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            result[key] = data[key];
-          }
-        }
-      });
-    }
-    return result;
+    console.log('Raw data received:', data);
+    console.log('Data type:', typeof data);
+    console.log('Data keys:', data ? Object.keys(data).slice(0, 3) : 'no data');
+    console.log('Sample key type:', data ? typeof Object.keys(data)[0] : 'no data');
+    return data || {};
   }, [data]);
 
   // Calculate the start date (January 1st of current year)
@@ -98,6 +85,7 @@ const ContributionGraph = ({ data, dailyGoal: propDailyGoal }) => {
         const steps = normalizedData[dateString] || 0;
         let thresholds = ACTIVITY_MODES[activityMode].thresholds;
         let level = null;
+        
         
         // Standard threshold-based mode
         if (steps > 0) {
