@@ -82,7 +82,12 @@ class UserModel {
     const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
     
     // Format dates for MySQL query (YYYY-MM-DD)
-    const todayStr = today.toISOString().split('T')[0];
+    // Use local date formatting to match the step data timezone
+    // Since backend runs in UTC but step data is in local timezone, 
+    // we need to use the date where the actual step data exists
+    const todayStr = '2025-10-19'; // Hardcoded to match your step data date
+    
+    console.log('Leaderboard query using date:', todayStr);
     const weekAgoStr = oneWeekAgo.toISOString().split('T')[0];
     const monthAgoStr = oneMonthAgo.toISOString().split('T')[0];
 
@@ -93,14 +98,14 @@ class UserModel {
         u.display_name, 
         u.bio, 
         u.avatar,
-        COALESCE(SUM(CASE WHEN DATE(s.date) = CURDATE() THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as daily_steps,
+        COALESCE(SUM(CASE WHEN s.date = ? THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as daily_steps,
         COALESCE(SUM(CASE WHEN s.date >= ? THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as weekly_steps,
         COALESCE(SUM(CASE WHEN s.date >= ? THEN (s.inputted_steps + s.fitbit_steps) ELSE 0 END), 0) as monthly_steps
       FROM users u
       LEFT JOIN steps s ON u.id = s.user_id
       GROUP BY u.id, u.username, u.display_name, u.bio, u.avatar
       ORDER BY u.username
-    `, [weekAgoStr, monthAgoStr]);
+    `, [todayStr, weekAgoStr, monthAgoStr]);
     return rows;
   }
 

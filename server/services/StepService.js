@@ -317,8 +317,10 @@ class StepService {
       const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
       
-      // Format dates for database query (YYYY-MM-DD)
-      const todayStr = today.toISOString().split('T')[0];
+      // Format dates for database query (YYYY-MM-DD) using local timezone
+      const todayStr = today.getFullYear() + '-' + 
+                       String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(today.getDate()).padStart(2, '0');
       const weekAgoStr = oneWeekAgo.toISOString().split('T')[0];
       const monthAgoStr = oneMonthAgo.toISOString().split('T')[0];
       
