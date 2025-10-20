@@ -249,27 +249,9 @@ const Goals = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // Normalize stepData the same way ContributionGraph does
+  // Use stepData directly - backend now sends proper string dates
   const normalizedStepData = useMemo(() => {
-    const result = {};
-    if (stepData && typeof stepData === 'object') {
-      Object.keys(stepData).forEach(key => {
-        try {
-          // Parse the date key and convert to YYYY-MM-DD format using local time
-          const date = new Date(key);
-          if (!isNaN(date.getTime())) {
-            const dateString = formatDateLocal(date);
-            result[dateString] = stepData[key];
-          }
-        } catch (e) {
-          // If key is already in YYYY-MM-DD format, use it as is
-          if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            result[key] = stepData[key];
-          }
-        }
-      });
-    }
-    return result;
+    return stepData || {};
   }, [stepData]);
 
   const getTodayProgress = () => {
