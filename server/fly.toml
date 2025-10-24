@@ -1,0 +1,35 @@
+app = "fithub-autumn-dew-5749"
+primary_region = "ord"
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "5001"
+  DB_HOST = "db-late-brook-4637.fly.dev"
+  DB_USER = "non_root_user"
+  DB_PASSWORD = ""
+  DB_NAME = "fithub"
+  DB_PORT = "3306"
+  JWT_SECRET = "fithub_production_jwt_secret_2024_secure_key"
+  FITBIT_CLIENT_ID = "23QF4Q"
+  FITBIT_CLIENT_SECRET = "13562256df746facd9f37d2f2efdc620"
+  FITBIT_REDIRECT_URI = "https://fithub.fly.dev/api/fitbit/callback"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 5001
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

@@ -12,7 +12,7 @@ primary_region = 'yyz'
 [[vm]]
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 2048
+  memory_mb = 512
 
 # The [processes] section is different for 8+, 8.4, and 5.7. Use the one that matches your version.
 # Use the following for versions 8 to 8.3:
@@ -35,5 +35,5 @@ primary_region = 'yyz'
   destination = "/data"
 
 [env]
-  MYSQL_DATABASE = "some_db"
+  MYSQL_DATABASE = "fithub"
   MYSQL_USER = "non_root_user"
