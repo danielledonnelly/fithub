@@ -3,6 +3,7 @@ primary_region = "ord"
 
 [build]
 dockerfile = "Dockerfile"
+build_context = ".."
 
 [env]
   NODE_ENV = "production"

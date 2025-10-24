@@ -26,6 +26,9 @@ app.use(morgan('dev'));
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve static files from React build directory
+app.use(express.static(path.join(__dirname, '../build')));
+
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -64,12 +67,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    message: `Cannot ${req.method} ${req.originalUrl}`
-  });
+// Handle React routing - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  // If it's an API route, return 404
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({
+      error: 'Route not found',
+      message: `Cannot ${req.method} ${req.originalUrl}`
+    });
+  }
+  // For all other routes, serve the React app
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
 // Start server
